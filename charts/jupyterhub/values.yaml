@@ -1,0 +1,40 @@
+# Default values for jupyterhub-platform wrapper chart.
+
+proxy:
+  secretToken: "REPLACE_ME_WITH_HELM_GENERATED"
+  service:
+    type: ClusterIP
+
+singleuser:
+  image:
+    name: ghcr.io/${REGISTRY_OWNER}/ml-platform-notebook
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  storage:
+    type: pvc
+    capacity: 10Gi
+    dynamic:
+      storageClass: longhorn # swap for your StorageClass
+  defaultUrl: "/lab"
+  extraEnv:
+    RAY_ADDRESS: "ray://ray-head:10001"
+
+hub:
+  config:
+    JupyterHub:
+      admin_access: true
+  db:
+    pvc:
+      storageClassName: longhorn
+
+# Allow OAuth or dummy auth later
+auth:
+  type: dummy
+  dummy:
+    password: "mlplatform"
+
+prePuller:
+  enabled: false
+
+rbac:
+  create: true
