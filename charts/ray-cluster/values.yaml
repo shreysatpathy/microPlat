@@ -1,0 +1,39 @@
+apiVersion: ray.io/v1
+kind: RayCluster
+metadata:
+  name: ray-sample
+spec:
+  rayVersion: "2.9.0"
+  headGroupSpec:
+    serviceType: ClusterIP
+    rayStartParams:
+      dashboard-host: 0.0.0.0
+    template:
+      spec:
+        containers:
+          - name: ray-head
+            image: rayproject/ray:2.9.0
+            resources:
+              limits:
+                cpu: 2
+                memory: 2Gi
+              requests:
+                cpu: 500m
+                memory: 512Mi
+  workerGroupSpecs:
+    - replicas: 2
+      minReplicas: 1
+      maxReplicas: 4
+      rayStartParams: {}
+      template:
+        spec:
+          containers:
+            - name: ray-worker
+              image: rayproject/ray:2.9.0
+              resources:
+                limits:
+                  cpu: 2
+                  memory: 2Gi
+                requests:
+                  cpu: 500m
+                  memory: 512Mi

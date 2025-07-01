@@ -1,0 +1,15 @@
+# Default values for KubeRay operator
+image:
+  repository: rayproject/kuberay-operator
+  tag: v1.1.0
+  pullPolicy: IfNotPresent
+
+manager:
+  replicas: 1
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi

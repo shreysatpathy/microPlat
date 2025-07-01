@@ -12,7 +12,7 @@
 
 set -euo pipefail
 
-REPO_URL="${1:-https://github.com/REPO_OWNER/ml-platform.git}"
+REPO_URL="${1:-https://github.com/shreysatpathy/microPlat.git}"
 REVISION="${2:-main}"
 NAMESPACE_ARGOCD="argocd"
 
@@ -52,6 +52,12 @@ apply_with_substitution() {
 
 echo "[+] Applying Argo CD application: jupyterhub"
 apply_with_substitution manifests/applications/jupyterhub.yaml
+
+echo "[+] Applying Argo CD application: ray-operator"
+apply_with_substitution manifests/applications/ray-operator.yaml
+
+echo "[+] Applying Argo CD application: ray-sample-cluster"
+apply_with_substitution manifests/applications/ray-cluster.yaml
 
 echo "[✔] Cluster bootstrap complete. Access Argo CD UI via:"
 echo "    kubectl -n argocd port-forward svc/argocd-server 8080:443"

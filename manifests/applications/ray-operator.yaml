@@ -1,0 +1,19 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ray-operator
+spec:
+  destination:
+    namespace: ml-dev
+    server: https://kubernetes.default.svc
+  source:
+    repoURL: "${REPO_URL}"
+    targetRevision: "${REVISION}"
+    path: charts/ray-operator
+  project: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
