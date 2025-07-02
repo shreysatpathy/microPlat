@@ -18,3 +18,5 @@ spec:
       values: values.yaml  # optional overrides
   syncPolicy:
     automated: {}
+    syncOptions:
+      - ServerSideApply=true
