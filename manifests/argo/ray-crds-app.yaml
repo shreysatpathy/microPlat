@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ray-crds
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"    # install first
+spec:
+  destination:
+    namespace: ml-dev                    # CRDs are cluster-scoped; ns here is only for App spec
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    chart: kuberay-crds                  # pull from remote repo
+    repoURL: https://ray-project.github.io/kuberay-helm/
+    targetRevision: 1.4.0
+  syncPolicy:
+    automated: {}
+    syncOptions:
+      - ServerSideApply=true
