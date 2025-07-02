@@ -21,7 +21,8 @@ spec:
                 cpu: 500m
                 memory: 512Mi
   workerGroupSpecs:
-    - replicas: 2
+    - groupName: worker-group
+      replicas: 2
       minReplicas: 1
       maxReplicas: 4
       rayStartParams: {}
