@@ -11,7 +11,7 @@ spec:
     server: https://kubernetes.default.svc
   project: default
   source:
-    repoURL: https://github.com/your-org/your-repo.git  # update to actual repo
+    repoURL: https://github.com/shreysatpathy/microPlat.git
     targetRevision: HEAD
     path: charts/ray-operator
     helm:
