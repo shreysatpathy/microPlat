@@ -1,18 +1,19 @@
 image:
   repository: rayproject/ray
-  tag: 2.23.0-py311
+  tag: 2.9.0-py311
+  pullPolicy: IfNotPresent
 
 spec:
   rayVersion: "2.9.0"
   headGroupSpec:
     serviceType: LoadBalancer
-    rayStartParams:
+    rayStartParams: 
       dashboard-host: 0.0.0.0
     template:
       spec:
         containers:
           - name: ray-head
-            image: rayproject/ray:2.23.0-py311
+            image: rayproject/ray:2.9.0-py311
             resources:
               limits:
                 cpu: 2
@@ -28,7 +29,7 @@ spec:
         spec:
           containers:
             - name: ray-worker
-              image: rayproject/ray:2.23.0-py311
+              image: rayproject/ray:2.9.0-py311
               resources:
                 limits:
                   cpu: 2
