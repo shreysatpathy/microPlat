@@ -5,7 +5,7 @@ metadata:
 spec:
   rayVersion: "2.9.0"
   headGroupSpec:
-    serviceType: ClusterIP
+    serviceType: LoadBalancer
     rayStartParams:
       dashboard-host: 0.0.0.0
     template:

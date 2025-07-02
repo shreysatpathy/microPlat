@@ -1,0 +1,14 @@
+apiVersion: v2
+name: ray-stack
+description: Umbrella chart that installs KubeRay CRDs, operator, and a default RayCluster.
+version: 0.1.0
+appVersion: "1.4.0"
+type: application
+
+dependencies:
+  - name: kuberay-operator
+    version: "1.4.0"
+    repository: "https://ray-project.github.io/kuberay-helm/"
+  - name: ray-sample-cluster
+    version: "0.1.0"
+    repository: "file://../ray-cluster"
