@@ -1,0 +1,18 @@
+apiVersion: ray.io/v1
+kind: RayCluster
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/name: ray-cluster
+spec:
+  rayVersion: {{ .Values.spec.rayVersion | quote }}
+  headGroupSpec:
+    serviceType: {{ .Values.spec.headGroupSpec.serviceType }}
+    rayStartParams:
+{{ toYaml .Values.spec.headGroupSpec.rayStartParams | indent 6 }}
+    template:
+{{ toYaml .Values.spec.headGroupSpec.template | indent 6 }}
+  workerGroupSpecs:
+{{ toYaml .Values.spec.workerGroupSpecs | indent 4 }}
