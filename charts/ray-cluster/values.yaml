@@ -1,6 +1,6 @@
 image:
   repository: rayproject/ray
-  tag: latest-py311
+  tag: nightly-py311-cpu
   pullPolicy: Always
 
 spec:
