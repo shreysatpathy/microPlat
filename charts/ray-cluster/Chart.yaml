@@ -2,5 +2,5 @@ apiVersion: v2
 name: ray-sample-cluster
 description: Sample RayCluster for development.
 version: 0.1.0
-appVersion: "2.9.0"
+appVersion: "2.47.0"
 type: application

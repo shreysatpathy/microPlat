@@ -1,10 +1,10 @@
 image:
   repository: rayproject/ray
-  tag: 2.9.0-py311
-  pullPolicy: IfNotPresent
+  tag: latest-py311
+  pullPolicy: Always
 
 spec:
-  rayVersion: "2.9.0"
+  rayVersion: "2.47.0"
   headGroupSpec:
     serviceType: LoadBalancer
     rayStartParams: 
