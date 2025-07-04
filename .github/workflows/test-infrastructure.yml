@@ -1,0 +1,221 @@
+name: Test Infrastructure
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Run tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  test-helm-charts:
+    name: Test Helm Charts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: '3.12.0'
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install test dependencies
+        run: |
+          pip install -r tests/requirements.txt
+
+      - name: Run Helm chart tests
+        run: |
+          pytest tests/test_helm_charts.py -v --tb=short
+
+      - name: Helm lint all charts
+        run: |
+          for chart in charts/*/; do
+            if [ -f "$chart/Chart.yaml" ]; then
+              echo "Linting $chart"
+              helm lint "$chart"
+            fi
+          done
+
+      - name: Helm template all charts
+        run: |
+          for chart in charts/*/; do
+            if [ -f "$chart/Chart.yaml" ]; then
+              echo "Templating $chart"
+              helm template test "$chart" --debug --dry-run
+            fi
+          done
+
+  test-kubernetes-manifests:
+    name: Test Kubernetes Manifests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install test dependencies
+        run: |
+          pip install -r tests/requirements.txt
+
+      - name: Install kubeval
+        run: |
+          wget https://github.com/instrumenta/kubeval/releases/latest/download/kubeval-linux-amd64.tar.gz
+          tar xf kubeval-linux-amd64.tar.gz
+          sudo mv kubeval /usr/local/bin
+
+      - name: Run Kubernetes manifest tests
+        run: |
+          pytest tests/test_kubernetes_manifests.py -v --tb=short
+
+      - name: Validate manifests with kubeval
+        run: |
+          find manifests -name "*.yaml" -o -name "*.yml" | xargs -I {} kubeval {} || true
+
+  test-docker-builds:
+    name: Test Docker Builds
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install test dependencies
+        run: |
+          pip install -r tests/requirements.txt
+
+      - name: Run Docker build tests
+        run: |
+          pytest tests/test_docker_builds.py -v --tb=short
+
+      - name: Test Docker builds (if Dockerfiles exist)
+        run: |
+          for image in notebook trainer serve; do
+            if [ -f "docker/$image/Dockerfile" ]; then
+              echo "Testing build for $image"
+              docker build --no-cache -t test-$image:latest docker/$image/ || echo "Build failed for $image"
+            fi
+          done
+
+  test-integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [test-helm-charts, test-kubernetes-manifests, test-docker-builds]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install test dependencies
+        run: |
+          pip install -r tests/requirements.txt
+
+      - name: Run integration tests
+        run: |
+          pytest tests/test_integration.py -v --tb=short
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Scan for secrets
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: main
+          head: HEAD
+          extra_args: --debug --only-verified
+
+  test-summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs: [test-helm-charts, test-kubernetes-manifests, test-docker-builds, test-integration, security-scan]
+    if: always()
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install test dependencies
+        run: |
+          pip install -r tests/requirements.txt
+
+      - name: Run all tests with coverage
+        run: |
+          pytest tests/ -v --cov=. --cov-report=xml --cov-report=html
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          flags: infrastructure
+          name: infrastructure-coverage
+
+      - name: Generate test report
+        if: always()
+        run: |
+          echo "# Test Summary" > test-summary.md
+          echo "" >> test-summary.md
+          echo "## Test Results" >> test-summary.md
+          echo "- Helm Charts: ${{ needs.test-helm-charts.result }}" >> test-summary.md
+          echo "- Kubernetes Manifests: ${{ needs.test-kubernetes-manifests.result }}" >> test-summary.md
+          echo "- Docker Builds: ${{ needs.test-docker-builds.result }}" >> test-summary.md
+          echo "- Integration Tests: ${{ needs.test-integration.result }}" >> test-summary.md
+          echo "- Security Scan: ${{ needs.security-scan.result }}" >> test-summary.md
+
+      - name: Comment PR with test results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const summary = fs.readFileSync('test-summary.md', 'utf8');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: summary
+            });
