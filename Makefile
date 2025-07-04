@@ -1,6 +1,6 @@
 # Makefile for microPlat infrastructure testing and management
 
-.PHONY: help install test test-fast test-helm test-k8s test-docker test-integration lint clean setup-dev
+.PHONY: help install test test-fast test-helm test-k8s test-docker test-integration lint clean setup-dev deploy-monitoring test-monitoring
 
 # Default target
 help:
@@ -14,6 +14,8 @@ help:
 	@echo "  test-k8s       - Run Kubernetes manifest tests"
 	@echo "  test-docker    - Run Docker build tests"
 	@echo "  test-integration - Run integration tests"
+	@echo "  test-monitoring - Run monitoring stack tests"
+	@echo "  deploy-monitoring - Deploy kube-prometheus-stack"
 	@echo "  lint           - Run linting on all components"
 	@echo "  clean          - Clean up test artifacts"
 	@echo "  validate       - Validate all infrastructure components"
@@ -148,6 +150,62 @@ helm-dependency-update:
 			echo "Updating dependencies for $$chart"; \
 			helm dependency update "$$chart" || true; \
 		fi \
+	done
+
+# Monitoring stack targets
+deploy-monitoring:
+	@echo "Deploying kube-prometheus-stack monitoring..."
+	@echo "Adding Prometheus community Helm repository..."
+	helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+	helm repo update
+	@echo "Creating monitoring namespace..."
+	kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
+	@echo "Installing kube-prometheus-stack..."
+	helm upgrade --install prometheus-stack prometheus-community/kube-prometheus-stack \
+		--namespace monitoring \
+		--values charts/kube-prometheus-stack/values.yaml \
+		--wait --timeout=10m
+	@echo "Monitoring stack deployed successfully!"
+	@echo "Access Grafana: kubectl port-forward -n monitoring svc/prometheus-stack-grafana 3000:80"
+	@echo "Access Prometheus: kubectl port-forward -n monitoring svc/prometheus-stack-kube-prom-prometheus 9090:9090"
+
+test-monitoring: install
+	@echo "Running monitoring stack tests..."
+	pytest tests/test_monitoring.py -v --tb=short
+
+monitoring-status:
+	@echo "Checking monitoring stack status..."
+	@echo "=== Monitoring Namespace ==="
+	kubectl get all -n monitoring
+	@echo "\n=== Prometheus Rules ==="
+	kubectl get prometheusrule -n monitoring
+	@echo "\n=== Service Monitors ==="
+	kubectl get servicemonitor -n monitoring
+	@echo "\n=== Persistent Volume Claims ==="
+	kubectl get pvc -n monitoring
+
+monitoring-clean:
+	@echo "Cleaning up monitoring stack..."
+	helm uninstall prometheus-stack -n monitoring || true
+	kubectl delete namespace monitoring || true
+
+monitoring-logs:
+	@echo "Fetching monitoring component logs..."
+	@echo "=== Prometheus Operator Logs ==="
+	kubectl logs -n monitoring deployment/prometheus-stack-kube-prom-operator --tail=50
+	@echo "\n=== Grafana Logs ==="
+	kubectl logs -n monitoring deployment/prometheus-stack-grafana --tail=50
+
+monitoring-port-forward:
+	@echo "Setting up port forwards for monitoring services..."
+	@echo "Grafana will be available at http://localhost:3000"
+	@echo "Prometheus will be available at http://localhost:9090"
+	@echo "AlertManager will be available at http://localhost:9093"
+	@echo "Press Ctrl+C to stop port forwarding"
+	kubectl port-forward -n monitoring svc/prometheus-stack-grafana 3000:80 & \
+	kubectl port-forward -n monitoring svc/prometheus-stack-kube-prom-prometheus 9090:9090 & \
+	kubectl port-forward -n monitoring svc/prometheus-stack-kube-prom-alertmanager 9093:9093 & \
+	wait
 	done
 
 helm-package:

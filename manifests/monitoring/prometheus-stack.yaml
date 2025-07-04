@@ -1,0 +1,112 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kube-prometheus-stack
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: kube-prometheus-stack
+    targetRevision: 55.5.0
+    helm:
+      valueFiles:
+        - values.yaml
+      values: |
+        # Override values for ML Platform monitoring
+        prometheus:
+          prometheusSpec:
+            additionalScrapeConfigs:
+              - job_name: 'ray-head'
+                kubernetes_sd_configs:
+                  - role: pod
+                    namespaces:
+                      names:
+                        - default
+                        - ml-dev
+                        - ml-prod
+                relabel_configs:
+                  - source_labels: [__meta_kubernetes_pod_label_ray_io_node_type]
+                    action: keep
+                    regex: head
+                  - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+                    action: keep
+                    regex: true
+                  - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_port]
+                    action: replace
+                    target_label: __address__
+                    regex: (.+)
+                    replacement: ${1}:8080
+              
+              - job_name: 'ray-workers'
+                kubernetes_sd_configs:
+                  - role: pod
+                    namespaces:
+                      names:
+                        - default
+                        - ml-dev
+                        - ml-prod
+                relabel_configs:
+                  - source_labels: [__meta_kubernetes_pod_label_ray_io_node_type]
+                    action: keep
+                    regex: worker
+                  - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+                    action: keep
+                    regex: true
+                  - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_port]
+                    action: replace
+                    target_label: __address__
+                    regex: (.+)
+                    replacement: ${1}:8080
+              
+              - job_name: 'mlflow'
+                kubernetes_sd_configs:
+                  - role: service
+                    namespaces:
+                      names:
+                        - default
+                        - ml-dev
+                        - ml-prod
+                relabel_configs:
+                  - source_labels: [__meta_kubernetes_service_label_app]
+                    action: keep
+                    regex: mlflow
+                  - source_labels: [__meta_kubernetes_service_port_name]
+                    action: keep
+                    regex: http
+        
+        grafana:
+          dashboards:
+            ml-platform:
+              ray-cluster:
+                gnetId: 17061
+                revision: 1
+                datasource: Prometheus
+              kubernetes-cluster:
+                gnetId: 7249
+                revision: 1
+                datasource: Prometheus
+              jupyterhub:
+                gnetId: 11818
+                revision: 1
+                datasource: Prometheus
+  
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

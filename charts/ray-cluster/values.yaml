@@ -9,11 +9,28 @@ spec:
     serviceType: LoadBalancer
     rayStartParams: 
       dashboard-host: 0.0.0.0
+      metrics-export-port: 8080
     template:
+      metadata:
+        annotations:
+          prometheus.io/scrape: "true"
+          prometheus.io/port: "8080"
+          prometheus.io/path: "/metrics"
+        labels:
+          ray.io/node-type: head
+          app.kubernetes.io/name: ray-cluster
+          app.kubernetes.io/component: head
       spec:
         containers:
           - name: ray-head
             image: rayproject/ray:2.47.0-py311-cpu
+            ports:
+              - containerPort: 8080
+                name: metrics
+                protocol: TCP
+              - containerPort: 8265
+                name: dashboard
+                protocol: TCP
             resources:
               limits:
                 cpu: 2
@@ -24,12 +41,26 @@ spec:
   workerGroupSpecs:
     - groupName: worker-group
       replicas: 2
-      rayStartParams: {}
+      rayStartParams:
+        metrics-export-port: 8080
       template:
+        metadata:
+          annotations:
+            prometheus.io/scrape: "true"
+            prometheus.io/port: "8080"
+            prometheus.io/path: "/metrics"
+          labels:
+            ray.io/node-type: worker
+            app.kubernetes.io/name: ray-cluster
+            app.kubernetes.io/component: worker
         spec:
           containers:
             - name: ray-worker
               image: rayproject/ray:2.47.0-py311-cpu
+              ports:
+                - containerPort: 8080
+                  name: metrics
+                  protocol: TCP
               resources:
                 limits:
                   cpu: 2

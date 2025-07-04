@@ -1,0 +1,212 @@
+# kube-prometheus-stack configuration for ML Platform monitoring
+kube-prometheus-stack:
+  # Prometheus configuration
+  prometheus:
+    prometheusSpec:
+      # Retention period for metrics
+      retention: 30d
+      retentionSize: 50GB
+      
+      # Storage configuration
+      storageSpec:
+        volumeClaimTemplate:
+          spec:
+            storageClassName: longhorn  # Change to your storage class
+            accessModes: ["ReadWriteOnce"]
+            resources:
+              requests:
+                storage: 50Gi
+      
+      # Resource limits
+      resources:
+        limits:
+          cpu: 2000m
+          memory: 8Gi
+        requests:
+          cpu: 1000m
+          memory: 4Gi
+      
+      # Additional scrape configs for Ray and MLflow
+      additionalScrapeConfigs:
+        - job_name: 'ray-head'
+          kubernetes_sd_configs:
+            - role: pod
+              namespaces:
+                names:
+                  - default
+                  - ml-dev
+                  - ml-prod
+          relabel_configs:
+            - source_labels: [__meta_kubernetes_pod_label_ray_io_node_type]
+              action: keep
+              regex: head
+            - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+              action: keep
+              regex: true
+            - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_port]
+              action: replace
+              target_label: __address__
+              regex: (.+)
+              replacement: ${1}:8080
+        
+        - job_name: 'ray-workers'
+          kubernetes_sd_configs:
+            - role: pod
+              namespaces:
+                names:
+                  - default
+                  - ml-dev
+                  - ml-prod
+          relabel_configs:
+            - source_labels: [__meta_kubernetes_pod_label_ray_io_node_type]
+              action: keep
+              regex: worker
+            - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+              action: keep
+              regex: true
+            - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_port]
+              action: replace
+              target_label: __address__
+              regex: (.+)
+              replacement: ${1}:8080
+        
+        - job_name: 'mlflow'
+          kubernetes_sd_configs:
+            - role: service
+              namespaces:
+                names:
+                  - default
+                  - ml-dev
+                  - ml-prod
+          relabel_configs:
+            - source_labels: [__meta_kubernetes_service_label_app]
+              action: keep
+              regex: mlflow
+            - source_labels: [__meta_kubernetes_service_port_name]
+              action: keep
+              regex: http
+  
+  # Grafana configuration
+  grafana:
+    enabled: true
+    adminPassword: admin  # Change this in production!
+    
+    # Persistence for dashboards
+    persistence:
+      enabled: true
+      storageClassName: longhorn  # Change to your storage class
+      size: 10Gi
+    
+    # Resource limits
+    resources:
+      limits:
+        cpu: 500m
+        memory: 1Gi
+      requests:
+        cpu: 250m
+        memory: 512Mi
+    
+    # Additional data sources
+    additionalDataSources:
+      - name: Loki
+        type: loki
+        url: http://loki:3100
+        access: proxy
+        isDefault: false
+    
+    # Import custom dashboards
+    dashboardProviders:
+      dashboardproviders.yaml:
+        apiVersion: 1
+        providers:
+        - name: 'ml-platform'
+          orgId: 1
+          folder: 'ML Platform'
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/ml-platform
+    
+    dashboards:
+      ml-platform:
+        ray-cluster:
+          gnetId: 17061  # Ray Cluster dashboard
+          revision: 1
+          datasource: Prometheus
+        kubernetes-cluster:
+          gnetId: 7249   # Kubernetes cluster monitoring
+          revision: 1
+          datasource: Prometheus
+        jupyterhub:
+          gnetId: 11818  # JupyterHub dashboard
+          revision: 1
+          datasource: Prometheus
+  
+  # Alertmanager configuration
+  alertmanager:
+    alertmanagerSpec:
+      storage:
+        volumeClaimTemplate:
+          spec:
+            storageClassName: longhorn  # Change to your storage class
+            accessModes: ["ReadWriteOnce"]
+            resources:
+              requests:
+                storage: 5Gi
+      
+      resources:
+        limits:
+          cpu: 200m
+          memory: 512Mi
+        requests:
+          cpu: 100m
+          memory: 256Mi
+  
+  # Node Exporter - collect node metrics
+  nodeExporter:
+    enabled: true
+  
+  # kube-state-metrics - collect Kubernetes object metrics
+  kubeStateMetrics:
+    enabled: true
+  
+  # Prometheus Operator configuration
+  prometheusOperator:
+    resources:
+      limits:
+        cpu: 200m
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+  
+  # Default rules for Kubernetes monitoring
+  defaultRules:
+    create: true
+    rules:
+      alertmanager: true
+      etcd: true
+      configReloaders: true
+      general: true
+      k8s: true
+      kubeApiserverAvailability: true
+      kubeApiserverBurnrate: true
+      kubeApiserverHistogram: true
+      kubeApiserverSlos: true
+      kubelet: true
+      kubeProxy: true
+      kubePrometheusGeneral: true
+      kubePrometheusNodeRecording: true
+      kubernetesApps: true
+      kubernetesResources: true
+      kubernetesStorage: true
+      kubernetesSystem: true
+      kubeScheduler: true
+      kubeStateMetrics: true
+      network: true
+      node: true
+      nodeExporterAlerting: true
+      nodeExporterRecording: true
+      prometheus: true
+      prometheusOperator: true
