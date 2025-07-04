@@ -11,7 +11,7 @@ kube-prometheus-stack:
       storageSpec:
         volumeClaimTemplate:
           spec:
-            storageClassName: longhorn  # Change to your storage class
+            storageClassName: standard  # Change to your storage class
             accessModes: ["ReadWriteOnce"]
             resources:
               requests:
@@ -94,7 +94,7 @@ kube-prometheus-stack:
     # Persistence for dashboards
     persistence:
       enabled: true
-      storageClassName: longhorn  # Change to your storage class
+      storageClassName: standard  # Change to your storage class
       size: 10Gi
     
     # Resource limits
@@ -149,7 +149,7 @@ kube-prometheus-stack:
       storage:
         volumeClaimTemplate:
           spec:
-            storageClassName: longhorn  # Change to your storage class
+            storageClassName: standard  # Change to your storage class
             accessModes: ["ReadWriteOnce"]
             resources:
               requests:
