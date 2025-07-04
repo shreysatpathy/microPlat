@@ -5,7 +5,7 @@ kube-prometheus-stack:
     prometheusSpec:
       # Retention period for metrics
       retention: 30d
-      retentionSize: 50GB
+      retentionSize: 5GB
       
       # Storage configuration
       storageSpec:
@@ -15,7 +15,7 @@ kube-prometheus-stack:
             accessModes: ["ReadWriteOnce"]
             resources:
               requests:
-                storage: 50Gi
+                storage: 5Gi
       
       # Resource limits
       resources:
