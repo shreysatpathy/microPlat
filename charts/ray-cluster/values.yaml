@@ -9,7 +9,7 @@ spec:
     serviceType: LoadBalancer
     rayStartParams: 
       dashboard-host: 0.0.0.0
-      metrics-export-port: 8080
+      metrics-export-port: "8080"
     template:
       metadata:
         annotations:
@@ -42,7 +42,7 @@ spec:
     - groupName: worker-group
       replicas: 2
       rayStartParams:
-        metrics-export-port: 8080
+        metrics-export-port: "8080"
       template:
         metadata:
           annotations:
