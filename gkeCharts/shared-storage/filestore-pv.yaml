@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: filestore-pv
+  labels:
+    app.kubernetes.io/name: filestore
+    app.kubernetes.io/component: shared-storage
+spec:
+  capacity:
+    storage: 1Ti
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: filestore-csi
+  csi:
+    driver: filestore.csi.storage.gke.io
+    volumeHandle: "projects/PROJECT_ID/locations/us-central1-c/instances/ml-platform-filestore/shares/ml_shared"
+    volumeAttributes:
+      ip: "FILESTORE_IP"  # Will be populated by Terraform output
+      volume: "ml_shared"

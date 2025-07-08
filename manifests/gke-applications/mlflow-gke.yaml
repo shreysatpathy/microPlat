@@ -1,0 +1,72 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mlflow-gke
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: mlflow
+    app.kubernetes.io/part-of: ml-platform
+    environment: gke
+spec:
+  project: default
+  
+  source:
+    repoURL: https://github.com/YOUR_USERNAME/microPlat.git  # Update with your repo
+    targetRevision: HEAD
+    path: gkeCharts/mlflow
+    helm:
+      valueFiles:
+        - values.yaml
+  
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: mlflow
+  
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+  
+  revisionHistoryLimit: 10
+  
+  # Health checks
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+    - group: ""
+      kind: Secret
+      jsonPointers:
+        - /data
+  
+  # Custom health checks for MLflow
+  health:
+    - group: apps
+      kind: Deployment
+      check: |
+        hs = {}
+        if obj.status ~= nil then
+          if obj.status.readyReplicas ~= nil and obj.status.readyReplicas > 0 then
+            hs.status = "Healthy"
+            hs.message = "MLflow deployment is ready"
+          else
+            hs.status = "Progressing"
+            hs.message = "Waiting for MLflow deployment to be ready"
+          end
+        else
+          hs.status = "Progressing"
+          hs.message = "Waiting for MLflow deployment status"
+        end
+        return hs

@@ -1,0 +1,21 @@
+apiVersion: v2
+name: mlflow-gke
+description: MLflow Helm chart optimized for Google Kubernetes Engine
+type: application
+version: 0.1.0
+appVersion: "2.8.1"
+
+maintainers:
+  - name: ML Platform Team
+    email: ml-platform@company.com
+
+keywords:
+  - mlflow
+  - ml-tracking
+  - experiment-tracking
+  - gke
+  - google-cloud
+
+annotations:
+  category: Machine Learning
+  licenses: Apache-2.0

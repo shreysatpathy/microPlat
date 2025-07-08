@@ -1,0 +1,87 @@
+# Example Terraform variables for ML Platform GKE deployment
+# Copy this file to terraform.tfvars and update with your values
+
+# GCP Project Configuration
+project_id   = "your-gcp-project-id"
+project_name = "ml-platform"
+environment  = "dev"
+
+# Regional Configuration
+region = "us-central1"
+zone   = "us-central1-a"
+
+# Network Configuration
+master_ipv4_cidr_block = "172.16.0.0/28"
+
+# Master Authorized Networks (restrict access to your IP)
+master_authorized_networks = [
+  {
+    cidr_block   = "0.0.0.0/0"  # Replace with your IP range
+    display_name = "All networks"
+  }
+]
+
+# Node Pool Configuration
+node_pools = [
+  {
+    name               = "general-purpose"
+    machine_type       = "e2-standard-4"
+    min_count          = 1
+    max_count          = 10
+    initial_node_count = 2
+    disk_size_gb       = 100
+    disk_type          = "pd-standard"
+    preemptible        = false
+    spot               = false
+    labels = {
+      workload = "general"
+    }
+    taints = []
+  },
+  {
+    name               = "ml-workload"
+    machine_type       = "n1-standard-8"
+    min_count          = 0
+    max_count          = 5
+    initial_node_count = 0
+    disk_size_gb       = 200
+    disk_type          = "pd-ssd"
+    preemptible        = true
+    spot               = false
+    labels = {
+      workload = "ml-compute"
+    }
+    taints = [
+      {
+        key    = "ml-workload"
+        value  = "true"
+        effect = "NO_SCHEDULE"
+      }
+    ]
+  }
+]
+
+# GPU Configuration (optional)
+enable_gpu = false
+gpu_node_pool = {
+  name               = "gpu-pool"
+  machine_type       = "n1-standard-4"
+  accelerator_type   = "nvidia-tesla-t4"
+  accelerator_count  = 1
+  min_count          = 0
+  max_count          = 3
+  initial_node_count = 0
+  disk_size_gb       = 200
+  disk_type          = "pd-ssd"
+  preemptible        = true
+  spot               = false
+}
+
+# Storage Configuration
+filestore_capacity_gb = 1024
+filestore_tier        = "BASIC_HDD"
+
+# Security Configuration
+enable_workload_identity = true
+enable_network_policy    = true
+enable_private_nodes     = true

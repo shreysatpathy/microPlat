@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mlflow.fullname" . }}
+  labels:
+    {{- include "mlflow.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.hpa.enabled }}
+  replicas: {{ .Values.replicaCount | default 1 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "mlflow.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+      labels:
+        {{- include "mlflow.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.mlflow.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.mlflow.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ .Values.mlflow.serviceAccount.name }}
+      securityContext:
+        {{- toYaml .Values.mlflow.securityContext | nindent 8 }}
+      containers:
+        - name: mlflow
+          image: "{{ .Values.mlflow.image.repository }}:{{ .Values.mlflow.image.tag }}"
+          imagePullPolicy: {{ .Values.mlflow.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.mlflow.service.targetPort }}
+              protocol: TCP
+          env:
+            {{- toYaml .Values.mlflow.env | nindent 12 }}
+          {{- with .Values.mlflow.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          livenessProbe:
+            {{- toYaml .Values.mlflow.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.mlflow.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.mlflow.resources | nindent 12 }}
+          command:
+            - mlflow
+            - server
+            - --host
+            - "0.0.0.0"
+            - --port
+            - "5000"
+            - --backend-store-uri
+            - "$(MLFLOW_BACKEND_STORE_URI)"
+            - --default-artifact-root
+            - "$(MLFLOW_DEFAULT_ARTIFACT_ROOT)"
+            - --serve-artifacts
+      {{- with .Values.mlflow.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

@@ -1,0 +1,26 @@
+apiVersion: v2
+name: ray-cluster-gke
+description: Ray cluster Helm chart optimized for Google Kubernetes Engine
+type: application
+version: 0.1.0
+appVersion: "2.47.0"
+
+dependencies:
+  - name: ray-cluster
+    version: "1.1.0"
+    repository: "https://ray-project.github.io/kuberay-helm/"
+
+maintainers:
+  - name: ML Platform Team
+    email: ml-platform@company.com
+
+keywords:
+  - ray
+  - distributed-computing
+  - ml
+  - gke
+  - google-cloud
+
+annotations:
+  category: Machine Learning
+  licenses: Apache-2.0

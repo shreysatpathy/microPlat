@@ -1,0 +1,76 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: shared-storage-gke
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: shared-storage
+    app.kubernetes.io/part-of: ml-platform
+    environment: gke
+spec:
+  project: default
+  
+  source:
+    repoURL: https://github.com/YOUR_USERNAME/microPlat.git  # Update with your repo
+    targetRevision: HEAD
+    path: gkeCharts/shared-storage
+    directory:
+      recurse: true
+  
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default  # Resources will be created in their specified namespaces
+  
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 2m
+  
+  revisionHistoryLimit: 10
+  
+  # Health checks for storage components
+  ignoreDifferences:
+    - group: ""
+      kind: PersistentVolume
+      jsonPointers:
+        - /spec/claimRef/resourceVersion
+        - /spec/claimRef/uid
+    - group: ""
+      kind: PersistentVolumeClaim
+      jsonPointers:
+        - /spec/volumeName
+        - /status
+  
+  # Custom health checks for storage
+  health:
+    - group: ""
+      kind: PersistentVolumeClaim
+      check: |
+        hs = {}
+        if obj.status ~= nil then
+          if obj.status.phase == "Bound" then
+            hs.status = "Healthy"
+            hs.message = "PVC is bound to PV"
+          elseif obj.status.phase == "Pending" then
+            hs.status = "Progressing"
+            hs.message = "PVC is pending binding"
+          else
+            hs.status = "Degraded"
+            hs.message = "PVC is in " .. obj.status.phase .. " state"
+          end
+        else
+          hs.status = "Progressing"
+          hs.message = "Waiting for PVC status"
+        end
+        return hs
