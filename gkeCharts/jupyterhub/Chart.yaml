@@ -1,0 +1,26 @@
+apiVersion: v2
+name: jupyterhub-gke
+description: JupyterHub Helm chart optimized for Google Kubernetes Engine
+type: application
+version: 0.1.0
+appVersion: "4.0.2"
+
+dependencies:
+  - name: jupyterhub
+    version: "3.3.7"
+    repository: "https://hub.jupyter.org/helm-chart/"
+
+maintainers:
+  - name: ML Platform Team
+    email: ml-platform@company.com
+
+keywords:
+  - jupyter
+  - notebook
+  - ml
+  - gke
+  - google-cloud
+
+annotations:
+  category: Machine Learning
+  licenses: Apache-2.0

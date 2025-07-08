@@ -1,0 +1,218 @@
+# JupyterHub values optimized for Google Kubernetes Engine (GKE)
+
+jupyterhub:
+  proxy:
+    secretToken: "REPLACE_ME_WITH_HELM_GENERATED"
+    service:
+      type: ClusterIP
+    
+    # Enable HTTPS termination at load balancer
+    https:
+      enabled: false  # Set to true when using ingress with TLS
+    
+    # Resources for proxy
+    chp:
+      resources:
+        requests:
+          cpu: 200m
+          memory: 512Mi
+        limits:
+          cpu: 500m
+          memory: 1Gi
+
+  singleuser:
+    # Use Artifact Registry for container images
+    image:
+      name: us-central1-docker.pkg.dev/PROJECT_ID/ml-platform-images/notebook
+      tag: "latest"
+      pullPolicy: IfNotPresent
+    
+    # GKE storage configuration
+    storage:
+      type: dynamic
+      capacity: 10Gi
+      dynamic:
+        storageClass: standard-rwo  # GKE standard persistent disk
+      homeMountPath: /home/jovyan
+    
+    # Shared storage via Filestore NFS
+    extraVolumes:
+      - name: shared-storage
+        persistentVolumeClaim:
+          claimName: filestore-pvc
+      - name: gcs-notebooks
+        csi:
+          driver: gcsfuse.csi.storage.gke.io
+          volumeAttributes:
+            bucketName: "PROJECT_ID-notebooks"
+            mountOptions: "implicit-dirs"
+    
+    extraVolumeMounts:
+      - name: shared-storage
+        mountPath: /shared
+        readOnly: false
+      - name: gcs-notebooks
+        mountPath: /gcs-notebooks
+        readOnly: false
+    
+    defaultUrl: "/lab"
+    
+    # Environment variables for GKE services
+    extraEnv:
+      RAY_ADDRESS: "ray://ray-head.ray-system:10001"
+      MLFLOW_TRACKING_URI: "http://mlflow.mlflow:5000"
+      GOOGLE_CLOUD_PROJECT: "PROJECT_ID"
+      GOOGLE_APPLICATION_CREDENTIALS: ""  # Using Workload Identity
+    
+    # Resource limits optimized for GKE
+    cpu:
+      limit: 2
+      guarantee: 0.5
+    memory:
+      limit: 4G
+      guarantee: 1G
+    
+    # Service account with Workload Identity
+    serviceAccountName: jupyterhub-user
+    
+    # Node selector for general-purpose node pool
+    nodeSelector:
+      cloud.google.com/gke-nodepool: general-purpose
+    
+    # Tolerations for preemptible nodes
+    tolerations:
+      - key: "cloud.google.com/gke-preemptible"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
+    
+    # Security context
+    uid: 1000
+    fsGid: 100
+    
+    # Startup probe for better reliability
+    startTimeout: 300
+
+  hub:
+    config:
+      JupyterHub:
+        admin_access: true
+        authenticator_class: "dummy"  # Change to google for production
+        # For Google OAuth:
+        # authenticator_class: "oauthenticator.google.GoogleOAuthenticator"
+        # google_oauth_callback_url: "https://jupyter.your-domain.com/hub/oauth_callback"
+    
+    # Database configuration for GKE
+    db:
+      type: postgres
+      pvc:
+        storageClassName: standard-rwo
+        size: 10Gi
+    
+    # Service account with Workload Identity
+    serviceAccount:
+      create: true
+      name: jupyterhub-hub
+      annotations:
+        iam.gke.io/gcp-service-account: "PROJECT_ID-jupyterhub@PROJECT_ID.iam.gserviceaccount.com"
+    
+    # Resources for hub
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+        cpu: 1
+        memory: 1Gi
+    
+    # Node selector for general-purpose node pool
+    nodeSelector:
+      cloud.google.com/gke-nodepool: general-purpose
+    
+    # Extra environment variables
+    extraEnv:
+      GOOGLE_CLOUD_PROJECT: "PROJECT_ID"
+
+  # Scheduling configuration
+  scheduling:
+    userScheduler:
+      enabled: true
+      replicas: 1
+      resources:
+        requests:
+          cpu: 50m
+          memory: 256Mi
+        limits:
+          cpu: 200m
+          memory: 512Mi
+      
+      # Node selector
+      nodeSelector:
+        cloud.google.com/gke-nodepool: general-purpose
+    
+    # Pod priority for better scheduling
+    podPriority:
+      enabled: true
+      globalDefault: false
+      defaultPriority: 0
+      userPlaceholderPriority: -10
+    
+    # User placeholder for faster startup
+    userPlaceholder:
+      enabled: true
+      replicas: 1
+
+  # Authentication configuration
+  auth:
+    type: dummy
+    dummy:
+      password: "mlplatform"
+    # For production with Google OAuth:
+    # type: google
+    # google:
+    #   clientId: "your-google-oauth-client-id"
+    #   clientSecret: "your-google-oauth-client-secret"
+    #   callbackUrl: "https://jupyter.your-domain.com/hub/oauth_callback"
+    #   hostedDomain: "your-company.com"  # Optional: restrict to organization
+
+  # Disable pre-puller for cost optimization
+  prePuller:
+    enabled: false
+
+  # RBAC configuration
+  rbac:
+    create: true
+
+  # Ingress configuration for GKE
+  ingress:
+    enabled: false
+    # For production with HTTPS:
+    # enabled: true
+    # annotations:
+    #   kubernetes.io/ingress.class: "gce"
+    #   kubernetes.io/ingress.global-static-ip-name: "jupyter-ip"
+    #   networking.gke.io/managed-certificates: "jupyter-ssl-cert"
+    #   kubernetes.io/ingress.allow-http: "false"
+    # hosts:
+    #   - jupyter.your-domain.com
+    # pathSuffix: "/*"
+
+  # Custom configuration for GKE
+  custom:
+    # Enable network policies
+    networkPolicy:
+      enabled: true
+      ingress:
+        - from:
+          - namespaceSelector:
+              matchLabels:
+                name: ray-system
+        - from:
+          - namespaceSelector:
+              matchLabels:
+                name: mlflow
+    
+    # Pod disruption budget
+    podDisruptionBudget:
+      enabled: true
+      minAvailable: 1

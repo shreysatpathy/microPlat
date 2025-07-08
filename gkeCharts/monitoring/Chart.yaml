@@ -1,0 +1,27 @@
+apiVersion: v2
+name: monitoring-gke
+description: Monitoring stack (Prometheus + Grafana) optimized for Google Kubernetes Engine
+type: application
+version: 0.1.0
+appVersion: "v0.70.0"
+
+dependencies:
+  - name: kube-prometheus-stack
+    version: "55.5.0"
+    repository: "https://prometheus-community.github.io/helm-charts"
+
+maintainers:
+  - name: ML Platform Team
+    email: ml-platform@company.com
+
+keywords:
+  - monitoring
+  - prometheus
+  - grafana
+  - alerting
+  - gke
+  - google-cloud
+
+annotations:
+  category: Monitoring
+  licenses: Apache-2.0

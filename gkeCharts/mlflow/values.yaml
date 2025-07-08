@@ -1,0 +1,210 @@
+# MLflow values optimized for Google Kubernetes Engine (GKE)
+
+# Global configuration
+global:
+  projectId: "PROJECT_ID"
+  region: "us-central1"
+
+# MLflow server configuration
+mlflow:
+  image:
+    repository: us-central1-docker.pkg.dev/PROJECT_ID/ml-platform-images/mlflow
+    tag: "2.8.1"
+    pullPolicy: IfNotPresent
+  
+  # Service configuration
+  service:
+    type: ClusterIP
+    port: 5000
+    targetPort: 5000
+  
+  # Resources
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 2
+      memory: 4Gi
+  
+  # Environment variables
+  env:
+    - name: MLFLOW_BACKEND_STORE_URI
+      value: "postgresql://mlflow:mlflow@postgres:5432/mlflow"
+    - name: MLFLOW_DEFAULT_ARTIFACT_ROOT
+      value: "gs://PROJECT_ID-mlflow-artifacts"
+    - name: GOOGLE_CLOUD_PROJECT
+      value: "PROJECT_ID"
+    - name: MLFLOW_SERVE_ARTIFACTS
+      value: "true"
+    - name: MLFLOW_ARTIFACTS_DESTINATION
+      value: "gs://PROJECT_ID-mlflow-artifacts"
+  
+  # Service account with Workload Identity
+  serviceAccount:
+    create: true
+    name: mlflow
+    annotations:
+      iam.gke.io/gcp-service-account: "PROJECT_ID-mlflow@PROJECT_ID.iam.gserviceaccount.com"
+  
+  # Node selector
+  nodeSelector:
+    cloud.google.com/gke-nodepool: general-purpose
+  
+  # Tolerations for preemptible nodes
+  tolerations:
+    - key: "cloud.google.com/gke-preemptible"
+      operator: "Equal"
+      value: "true"
+      effect: "NoSchedule"
+  
+  # Volume mounts for shared storage
+  volumeMounts:
+    - name: shared-storage
+      mountPath: /shared
+      readOnly: false
+  
+  volumes:
+    - name: shared-storage
+      persistentVolumeClaim:
+        claimName: filestore-pvc
+  
+  # Liveness and readiness probes
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: 5000
+    initialDelaySeconds: 60
+    periodSeconds: 30
+    timeoutSeconds: 10
+    failureThreshold: 3
+  
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: 5000
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  
+  # Security context
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+
+# PostgreSQL database configuration
+postgresql:
+  enabled: true
+  
+  # PostgreSQL image
+  image:
+    repository: postgres
+    tag: "15-alpine"
+    pullPolicy: IfNotPresent
+  
+  # Database configuration
+  auth:
+    postgresPassword: "mlflow"
+    username: "mlflow"
+    password: "mlflow"
+    database: "mlflow"
+  
+  # Persistence
+  primary:
+    persistence:
+      enabled: true
+      storageClass: "standard-rwo"
+      size: 20Gi
+    
+    # Resources
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: 1
+        memory: 2Gi
+    
+    # Node selector
+    nodeSelector:
+      cloud.google.com/gke-nodepool: general-purpose
+    
+    # Tolerations for preemptible nodes
+    tolerations:
+      - key: "cloud.google.com/gke-preemptible"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
+  
+  # Service configuration
+  service:
+    type: ClusterIP
+    ports:
+      postgresql: 5432
+
+# Ingress configuration
+ingress:
+  enabled: false
+  # For production with HTTPS:
+  # enabled: true
+  # className: "gce"
+  # annotations:
+  #   kubernetes.io/ingress.global-static-ip-name: "mlflow-ip"
+  #   networking.gke.io/managed-certificates: "mlflow-ssl-cert"
+  #   kubernetes.io/ingress.allow-http: "false"
+  # hosts:
+  #   - host: mlflow.your-domain.com
+  #     paths:
+  #       - path: /*
+  #         pathType: ImplementationSpecific
+  # tls:
+  #   - secretName: mlflow-tls
+  #     hosts:
+  #       - mlflow.your-domain.com
+
+# Network policy
+networkPolicy:
+  enabled: true
+  ingress:
+    - from:
+      - namespaceSelector:
+          matchLabels:
+            name: jupyterhub
+    - from:
+      - namespaceSelector:
+          matchLabels:
+            name: ray-system
+    - from:
+      - podSelector:
+          matchLabels:
+            app.kubernetes.io/name: mlflow
+
+# Pod disruption budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Horizontal Pod Autoscaler
+hpa:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+# Service monitor for Prometheus
+serviceMonitor:
+  enabled: true
+  labels:
+    app.kubernetes.io/name: mlflow
+  interval: 30s
+  path: /metrics
+  port: http
+
+# Additional labels
+labels:
+  app.kubernetes.io/name: mlflow
+  app.kubernetes.io/component: ml-tracking
+  app.kubernetes.io/part-of: ml-platform

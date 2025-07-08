@@ -1,0 +1,398 @@
+# Ray cluster values optimized for Google Kubernetes Engine (GKE)
+
+# Global image configuration
+image:
+  repository: us-central1-docker.pkg.dev/PROJECT_ID/ml-platform-images/ray
+  tag: 2.47.0-py311-cpu
+  pullPolicy: IfNotPresent
+
+# Ray cluster specification
+spec:
+  rayVersion: "2.47.0"
+  
+  # Head node configuration
+  headGroupSpec:
+    serviceType: ClusterIP  # Use ClusterIP for internal access
+    rayStartParams: 
+      dashboard-host: 0.0.0.0
+      metrics-export-port: "8080"
+      object-store-memory: "1000000000"  # 1GB object store
+    
+    template:
+      metadata:
+        annotations:
+          # Prometheus scraping
+          prometheus.io/scrape: "true"
+          prometheus.io/port: "8080"
+          prometheus.io/path: "/metrics"
+          # Workload Identity
+          iam.gke.io/gcp-service-account: "PROJECT_ID-ray@PROJECT_ID.iam.gserviceaccount.com"
+        labels:
+          ray.io/node-type: head
+          app.kubernetes.io/name: ray-cluster
+          app.kubernetes.io/component: head
+      
+      spec:
+        # Service account with Workload Identity
+        serviceAccountName: ray-head
+        
+        # Node selector for ML workload node pool
+        nodeSelector:
+          cloud.google.com/gke-nodepool: ml-workload
+        
+        # Tolerations for preemptible nodes
+        tolerations:
+          - key: "cloud.google.com/gke-preemptible"
+            operator: "Equal"
+            value: "true"
+            effect: "NoSchedule"
+        
+        # Affinity rules
+        affinity:
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                  - key: ray.io/node-type
+                    operator: In
+                    values: ["head"]
+                topologyKey: kubernetes.io/hostname
+        
+        containers:
+          - name: ray-head
+            image: us-central1-docker.pkg.dev/PROJECT_ID/ml-platform-images/ray:2.47.0-py311-cpu
+            
+            # Ports configuration
+            ports:
+              - containerPort: 8080
+                name: metrics
+                protocol: TCP
+              - containerPort: 8265
+                name: dashboard
+                protocol: TCP
+              - containerPort: 10001
+                name: client
+                protocol: TCP
+              - containerPort: 8000
+                name: serve
+                protocol: TCP
+            
+            # Environment variables
+            env:
+              - name: RAY_DISABLE_IMPORT_WARNING
+                value: "1"
+              - name: GOOGLE_CLOUD_PROJECT
+                value: "PROJECT_ID"
+              - name: RAY_OBJECT_STORE_ALLOW_SLOW_STORAGE
+                value: "1"
+            
+            # Volume mounts
+            volumeMounts:
+              - name: shared-storage
+                mountPath: /shared
+              - name: ray-logs
+                mountPath: /tmp/ray
+              - name: gcs-data
+                mountPath: /gcs-data
+            
+            # Resource configuration
+            resources:
+              limits:
+                cpu: 4
+                memory: 8Gi
+              requests:
+                cpu: 1
+                memory: 2Gi
+            
+            # Liveness and readiness probes
+            livenessProbe:
+              httpGet:
+                path: /
+                port: 8265
+              initialDelaySeconds: 30
+              periodSeconds: 30
+              timeoutSeconds: 10
+            
+            readinessProbe:
+              httpGet:
+                path: /
+                port: 8265
+              initialDelaySeconds: 15
+              periodSeconds: 10
+              timeoutSeconds: 5
+        
+        # Volumes
+        volumes:
+          - name: shared-storage
+            persistentVolumeClaim:
+              claimName: filestore-pvc
+          - name: ray-logs
+            emptyDir: {}
+          - name: gcs-data
+            csi:
+              driver: gcsfuse.csi.storage.gke.io
+              volumeAttributes:
+                bucketName: "PROJECT_ID-datasets"
+                mountOptions: "implicit-dirs"
+
+  # Worker node configurations
+  workerGroupSpecs:
+    # CPU worker group
+    - groupName: cpu-worker-group
+      replicas: 2
+      minReplicas: 1
+      maxReplicas: 10
+      
+      rayStartParams:
+        metrics-export-port: "8080"
+        object-store-memory: "500000000"  # 500MB object store
+      
+      template:
+        metadata:
+          annotations:
+            # Prometheus scraping
+            prometheus.io/scrape: "true"
+            prometheus.io/port: "8080"
+            prometheus.io/path: "/metrics"
+            # Workload Identity
+            iam.gke.io/gcp-service-account: "PROJECT_ID-ray@PROJECT_ID.iam.gserviceaccount.com"
+          labels:
+            ray.io/node-type: worker
+            ray.io/group: cpu-worker
+            app.kubernetes.io/name: ray-cluster
+            app.kubernetes.io/component: worker
+        
+        spec:
+          # Service account with Workload Identity
+          serviceAccountName: ray-worker
+          
+          # Node selector for ML workload node pool
+          nodeSelector:
+            cloud.google.com/gke-nodepool: ml-workload
+          
+          # Tolerations for preemptible nodes
+          tolerations:
+            - key: "cloud.google.com/gke-preemptible"
+              operator: "Equal"
+              value: "true"
+              effect: "NoSchedule"
+          
+          # Affinity rules
+          affinity:
+            podAntiAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+              - weight: 100
+                podAffinityTerm:
+                  labelSelector:
+                    matchExpressions:
+                    - key: ray.io/node-type
+                      operator: In
+                      values: ["worker"]
+                  topologyKey: kubernetes.io/hostname
+          
+          containers:
+            - name: ray-worker
+              image: us-central1-docker.pkg.dev/PROJECT_ID/ml-platform-images/ray:2.47.0-py311-cpu
+              
+              # Ports configuration
+              ports:
+                - containerPort: 8080
+                  name: metrics
+                  protocol: TCP
+              
+              # Environment variables
+              env:
+                - name: RAY_DISABLE_IMPORT_WARNING
+                  value: "1"
+                - name: GOOGLE_CLOUD_PROJECT
+                  value: "PROJECT_ID"
+                - name: RAY_OBJECT_STORE_ALLOW_SLOW_STORAGE
+                  value: "1"
+              
+              # Volume mounts
+              volumeMounts:
+                - name: shared-storage
+                  mountPath: /shared
+                - name: ray-logs
+                  mountPath: /tmp/ray
+                - name: gcs-data
+                  mountPath: /gcs-data
+              
+              # Resource configuration
+              resources:
+                limits:
+                  cpu: 3
+                  memory: 6Gi
+                requests:
+                  cpu: 500m
+                  memory: 1Gi
+              
+              # Liveness probe
+              livenessProbe:
+                exec:
+                  command:
+                    - /bin/bash
+                    - -c
+                    - "ray status"
+                initialDelaySeconds: 60
+                periodSeconds: 30
+                timeoutSeconds: 10
+          
+          # Volumes
+          volumes:
+            - name: shared-storage
+              persistentVolumeClaim:
+                claimName: filestore-pvc
+            - name: ray-logs
+              emptyDir: {}
+            - name: gcs-data
+              csi:
+                driver: gcsfuse.csi.storage.gke.io
+                volumeAttributes:
+                  bucketName: "PROJECT_ID-datasets"
+                  mountOptions: "implicit-dirs"
+
+    # GPU worker group (optional)
+    - groupName: gpu-worker-group
+      replicas: 0  # Set to desired number when GPU nodes are available
+      minReplicas: 0
+      maxReplicas: 5
+      
+      rayStartParams:
+        metrics-export-port: "8080"
+        object-store-memory: "1000000000"  # 1GB object store
+      
+      template:
+        metadata:
+          annotations:
+            # Prometheus scraping
+            prometheus.io/scrape: "true"
+            prometheus.io/port: "8080"
+            prometheus.io/path: "/metrics"
+            # Workload Identity
+            iam.gke.io/gcp-service-account: "PROJECT_ID-ray@PROJECT_ID.iam.gserviceaccount.com"
+          labels:
+            ray.io/node-type: worker
+            ray.io/group: gpu-worker
+            app.kubernetes.io/name: ray-cluster
+            app.kubernetes.io/component: worker
+        
+        spec:
+          # Service account with Workload Identity
+          serviceAccountName: ray-worker
+          
+          # Node selector for GPU node pool
+          nodeSelector:
+            cloud.google.com/gke-nodepool: gpu-nodes
+            cloud.google.com/gke-accelerator: nvidia-tesla-t4
+          
+          # Tolerations for GPU nodes
+          tolerations:
+            - key: "nvidia.com/gpu"
+              operator: "Exists"
+              effect: "NoSchedule"
+            - key: "cloud.google.com/gke-preemptible"
+              operator: "Equal"
+              value: "true"
+              effect: "NoSchedule"
+          
+          containers:
+            - name: ray-worker
+              image: us-central1-docker.pkg.dev/PROJECT_ID/ml-platform-images/ray:2.47.0-py311-gpu
+              
+              # Ports configuration
+              ports:
+                - containerPort: 8080
+                  name: metrics
+                  protocol: TCP
+              
+              # Environment variables
+              env:
+                - name: RAY_DISABLE_IMPORT_WARNING
+                  value: "1"
+                - name: GOOGLE_CLOUD_PROJECT
+                  value: "PROJECT_ID"
+                - name: RAY_OBJECT_STORE_ALLOW_SLOW_STORAGE
+                  value: "1"
+                - name: CUDA_VISIBLE_DEVICES
+                  value: "0"
+              
+              # Volume mounts
+              volumeMounts:
+                - name: shared-storage
+                  mountPath: /shared
+                - name: ray-logs
+                  mountPath: /tmp/ray
+                - name: gcs-data
+                  mountPath: /gcs-data
+              
+              # Resource configuration with GPU
+              resources:
+                limits:
+                  cpu: 4
+                  memory: 12Gi
+                  nvidia.com/gpu: 1
+                requests:
+                  cpu: 1
+                  memory: 4Gi
+                  nvidia.com/gpu: 1
+          
+          # Volumes
+          volumes:
+            - name: shared-storage
+              persistentVolumeClaim:
+                claimName: filestore-pvc
+            - name: ray-logs
+              emptyDir: {}
+            - name: gcs-data
+              csi:
+                driver: gcsfuse.csi.storage.gke.io
+                volumeAttributes:
+                  bucketName: "PROJECT_ID-datasets"
+                  mountOptions: "implicit-dirs"
+
+# Autoscaling configuration
+autoscaler:
+  enabled: true
+  image:
+    repository: rayproject/ray
+    tag: 2.47.0-py311-cpu
+    pullPolicy: IfNotPresent
+  
+  # Autoscaler resources
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+  
+  # Node selector
+  nodeSelector:
+    cloud.google.com/gke-nodepool: general-purpose
+
+# Service configuration
+service:
+  type: ClusterIP
+  ports:
+    - name: dashboard
+      port: 8265
+      targetPort: 8265
+    - name: client
+      port: 10001
+      targetPort: 10001
+    - name: serve
+      port: 8000
+      targetPort: 8000
+
+# Service monitor for Prometheus
+serviceMonitor:
+  enabled: true
+  labels:
+    app.kubernetes.io/name: ray-cluster
+  interval: 30s
+  path: /metrics
+  port: metrics

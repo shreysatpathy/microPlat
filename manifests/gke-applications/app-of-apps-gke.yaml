@@ -1,0 +1,56 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ml-platform-gke
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: ml-platform
+    app.kubernetes.io/part-of: ml-platform
+    environment: gke
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  
+  source:
+    repoURL: https://github.com/YOUR_USERNAME/microPlat.git  # Update with your repo
+    targetRevision: HEAD
+    path: manifests/gke-applications
+    directory:
+      recurse: true
+      exclude: "app-of-apps-gke.yaml"  # Exclude self to avoid recursion
+  
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 5m
+  
+  revisionHistoryLimit: 10
+  
+  # Sync waves for proper deployment order
+  syncWaves:
+    - name: "shared-storage"
+      wave: 0
+    - name: "monitoring"
+      wave: 1
+    - name: "mlflow"
+      wave: 2
+    - name: "ray-cluster"
+      wave: 3
+    - name: "jupyterhub"
+      wave: 4
