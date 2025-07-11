@@ -53,6 +53,9 @@ apply_with_substitution() {
 echo "[+] Applying Argo CD application: jupyterhub"
 apply_with_substitution manifests/applications/jupyterhub.yaml
 
+echo "[+] Applying Argo CD application: monitoring stack"
+apply_with_substitution manifests/applications/kube-prometheus-stack.yaml
+
 echo "[+] Applying Argo CD application: ray-operator"
 apply_with_substitution manifests/applications/ray-operator.yaml
 
