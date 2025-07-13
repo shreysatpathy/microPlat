@@ -173,6 +173,12 @@ kube-prometheus-stack:
   
   # Prometheus Operator configuration
   prometheusOperator:
+    # Disable admission webhooks to prevent RBAC conflicts
+    admissionWebhooks:
+      enabled: false
+      patch:
+        enabled: false
+    
     resources:
       limits:
         cpu: 200m
