@@ -1,0 +1,10 @@
+apiVersion: v2
+name: monitoring-crds
+description: Prometheus Operator CRDs for kube-prometheus-stack
+version: 0.1.0
+appVersion: "55.5.0"
+dependencies:
+  - name: kube-prometheus-stack
+    version: "55.5.0"
+    repository: "https://prometheus-community.github.io/helm-charts"
+    condition: false

@@ -1,0 +1,29 @@
+# Monitoring CRDs configuration
+# This chart only installs the Prometheus Operator CRDs
+
+kube-prometheus-stack:
+  # Disable all components except CRDs
+  crds:
+    enabled: true
+  
+  # Disable all other components
+  prometheus:
+    enabled: false
+  
+  grafana:
+    enabled: false
+  
+  alertmanager:
+    enabled: false
+  
+  nodeExporter:
+    enabled: false
+  
+  kubeStateMetrics:
+    enabled: false
+  
+  prometheusOperator:
+    enabled: false
+  
+  defaultRules:
+    create: false
