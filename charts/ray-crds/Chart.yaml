@@ -1,0 +1,6 @@
+apiVersion: v2
+name: ray-crds
+description: Ray Custom Resource Definitions
+type: application
+version: 0.1.0
+appVersion: "1.1.0"

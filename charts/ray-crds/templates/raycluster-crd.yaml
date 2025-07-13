@@ -1,0 +1,337 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: rayclusters.ray.io
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.9.2
+spec:
+  group: ray.io
+  names:
+    kind: RayCluster
+    listKind: RayClusterList
+    plural: rayclusters
+    singular: raycluster
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: RayCluster is the Schema for the RayClusters API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation of an object.'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this object represents.'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: RayClusterSpec defines the desired state of RayCluster
+            properties:
+              autoscalerOptions:
+                description: AutoscalerOptions specifies optional configuration for the Ray autoscaler.
+                properties:
+                  idleTimeoutSeconds:
+                    description: IdleTimeoutSeconds is the number of seconds to wait before scaling down a worker pod which is not using Ray resources.
+                    format: int32
+                    minimum: 0
+                    type: integer
+                  resources:
+                    description: Resources specifies optional resource request and limit overrides for the autoscaler container.
+                    properties:
+                      limits:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Limits describes the maximum amount of compute resources allowed.'
+                        type: object
+                      requests:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Requests describes the minimum amount of compute resources required.'
+                        type: object
+                    type: object
+                  upscalingMode:
+                    description: UpscalingMode is "Conservative", "Default", or "Aggressive."
+                    enum:
+                    - Default
+                    - Aggressive
+                    - Conservative
+                    type: string
+                type: object
+              enableInTreeAutoscaling:
+                description: EnableInTreeAutoscaling indicates whether operator should create in tree autoscaling configs
+                type: boolean
+              headGroupSpec:
+                description: HeadGroupSpec are the spec for the head pod
+                properties:
+                  enableIngress:
+                    description: EnableIngress indicates whether operator should create ingress object for this head service or not.
+                    type: boolean
+                  headService:
+                    description: HeadService is the Kubernetes service for the Ray head node.
+                    properties:
+                      metadata:
+                        description: Standard object metadata.
+                        properties:
+                          annotations:
+                            additionalProperties:
+                              type: string
+                            description: Annotations is an unstructured key value map stored with a resource
+                            type: object
+                          labels:
+                            additionalProperties:
+                              type: string
+                            description: Map of string keys and values that can be used to organize and categorize
+                            type: object
+                        type: object
+                      spec:
+                        description: Spec is the ServiceSpec for the Ray head service.
+                        properties:
+                          type:
+                            description: type determines how the Service is exposed.
+                            type: string
+                        type: object
+                    type: object
+                  rayStartParams:
+                    additionalProperties:
+                      type: string
+                    description: RayStartParams are the params for `ray start` command
+                    type: object
+                  serviceType:
+                    description: ServiceType is Kubernetes service type
+                    type: string
+                  template:
+                    description: Template is a pod template for the head
+                    properties:
+                      metadata:
+                        description: Standard object metadata.
+                        properties:
+                          annotations:
+                            additionalProperties:
+                              type: string
+                            description: Annotations is an unstructured key value map stored with a resource
+                            type: object
+                          labels:
+                            additionalProperties:
+                              type: string
+                            description: Map of string keys and values that can be used to organize and categorize
+                            type: object
+                        type: object
+                      spec:
+                        description: Specification of the desired behavior of the pod.
+                        properties:
+                          containers:
+                            description: List of containers belonging to the pod.
+                            items:
+                              description: A single application container that you want to run within a pod.
+                              properties:
+                                name:
+                                  description: Name of the container specified as a DNS_LABEL.
+                                  type: string
+                                image:
+                                  description: Docker image name.
+                                  type: string
+                                resources:
+                                  description: Compute Resources required by this container.
+                                  properties:
+                                    limits:
+                                      additionalProperties:
+                                        anyOf:
+                                        - type: integer
+                                        - type: string
+                                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                        x-kubernetes-int-or-string: true
+                                      description: 'Limits describes the maximum amount of compute resources allowed.'
+                                      type: object
+                                    requests:
+                                      additionalProperties:
+                                        anyOf:
+                                        - type: integer
+                                        - type: string
+                                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                        x-kubernetes-int-or-string: true
+                                      description: 'Requests describes the minimum amount of compute resources required.'
+                                      type: object
+                                  type: object
+                              required:
+                              - name
+                              type: object
+                            type: array
+                        type: object
+                    type: object
+                required:
+                - rayStartParams
+                - template
+                type: object
+              rayVersion:
+                description: RayVersion is the version of ray being used.
+                type: string
+              workerGroupSpecs:
+                description: WorkerGroupSpecs are the specs for the worker pods
+                items:
+                  description: WorkerGroupSpec are the specs for the worker pods
+                  properties:
+                    groupName:
+                      description: we can have multiple worker groups, we distinguish them by name
+                      type: string
+                    maxReplicas:
+                      description: MaxReplicas is the maximum number of replicas for this worker group.
+                      format: int32
+                      minimum: 0
+                      type: integer
+                    minReplicas:
+                      description: MinReplicas is the minimum number of replicas for this worker group.
+                      format: int32
+                      minimum: 0
+                      type: integer
+                    rayStartParams:
+                      additionalProperties:
+                        type: string
+                      description: RayStartParams are the params for `ray start` command
+                      type: object
+                    replicas:
+                      description: Replicas is the number of desired replicas for this worker group.
+                      format: int32
+                      minimum: 0
+                      type: integer
+                    scaleStrategy:
+                      description: ScaleStrategy defines which pods to remove
+                      properties:
+                        workersToDelete:
+                          description: WorkersToDelete workers to be deleted
+                          items:
+                            type: string
+                          type: array
+                      type: object
+                    template:
+                      description: Template is a pod template for the worker
+                      properties:
+                        metadata:
+                          description: Standard object metadata.
+                          properties:
+                            annotations:
+                              additionalProperties:
+                                type: string
+                              description: Annotations is an unstructured key value map stored with a resource
+                              type: object
+                            labels:
+                              additionalProperties:
+                                type: string
+                              description: Map of string keys and values that can be used to organize and categorize
+                              type: object
+                          type: object
+                        spec:
+                          description: Specification of the desired behavior of the pod.
+                          properties:
+                            containers:
+                              description: List of containers belonging to the pod.
+                              items:
+                                description: A single application container that you want to run within a pod.
+                                properties:
+                                  name:
+                                    description: Name of the container specified as a DNS_LABEL.
+                                    type: string
+                                  image:
+                                    description: Docker image name.
+                                    type: string
+                                  resources:
+                                    description: Compute Resources required by this container.
+                                    properties:
+                                      limits:
+                                        additionalProperties:
+                                          anyOf:
+                                          - type: integer
+                                          - type: string
+                                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                          x-kubernetes-int-or-string: true
+                                        description: 'Limits describes the maximum amount of compute resources allowed.'
+                                        type: object
+                                      requests:
+                                        additionalProperties:
+                                          anyOf:
+                                          - type: integer
+                                          - type: string
+                                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                          x-kubernetes-int-or-string: true
+                                        description: 'Requests describes the minimum amount of compute resources required.'
+                                        type: object
+                                    type: object
+                                required:
+                                - name
+                                type: object
+                              type: array
+                          type: object
+                      type: object
+                  required:
+                  - groupName
+                  - rayStartParams
+                  - replicas
+                  - template
+                  type: object
+                type: array
+            required:
+            - headGroupSpec
+            type: object
+          status:
+            description: RayClusterStatus defines the observed state of RayCluster
+            properties:
+              availableWorkerReplicas:
+                description: AvailableWorkerReplicas indicates how many worker replicas are available.
+                format: int32
+                type: integer
+              desiredWorkerReplicas:
+                description: DesiredWorkerReplicas indicates how many worker replicas should be created by RayCluster.
+                format: int32
+                type: integer
+              endpoints:
+                additionalProperties:
+                  type: string
+                description: Endpoints are the endpoints for the Ray cluster
+                type: object
+              head:
+                description: Head is the status of the Ray head
+                properties:
+                  podIP:
+                    description: PodIP is the IP address of the head pod
+                    type: string
+                  serviceIP:
+                    description: ServiceIP is the IP address of the head service
+                    type: string
+                type: object
+              lastUpdateTime:
+                description: LastUpdateTime indicates the last time the cluster was updated.
+                format: date-time
+                type: string
+              maxWorkerReplicas:
+                description: MaxWorkerReplicas indicates the maximum number of worker replicas.
+                format: int32
+                type: integer
+              minWorkerReplicas:
+                description: MinWorkerReplicas indicates the minimum number of worker replicas.
+                format: int32
+                type: integer
+              observedGeneration:
+                description: ObservedGeneration is the most recent generation observed for this RayCluster.
+                format: int64
+                type: integer
+              reason:
+                description: Reason provides more information about current State
+                type: string
+              state:
+                description: State indicates the state of RayCluster
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

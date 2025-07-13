@@ -13,3 +13,6 @@ manager:
     requests:
       cpu: 100m
       memory: 128Mi
+
+# Disable CRD installation to handle separately
+installCRDs: false

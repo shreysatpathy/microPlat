@@ -1,9 +1,9 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: ray-operator
+  name: ray-crds
   annotations:
-    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   destination:
     namespace: ml-dev
@@ -11,7 +11,7 @@ spec:
   source:
     repoURL: "${REPO_URL}"
     targetRevision: "${REVISION}"
-    path: charts/ray-operator
+    path: charts/ray-crds
   project: default
   syncPolicy:
     automated:
