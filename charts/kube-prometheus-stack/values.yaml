@@ -114,7 +114,7 @@ kube-prometheus-stack:
         access: proxy
         isDefault: false
     
-    # Import custom dashboards
+    # Dashboard providers - load from ConfigMaps
     dashboardProviders:
       dashboardproviders.yaml:
         apiVersion: 1
@@ -128,16 +128,13 @@ kube-prometheus-stack:
           options:
             path: /var/lib/grafana/dashboards/ml-platform
     
+    # Load dashboards from files in the chart
     dashboards:
       ml-platform:
         ray-cluster:
-          gnetId: 17061  # Ray Cluster dashboard
-          revision: 1
-          datasource: Prometheus
+          file: dashboards/ray-cluster.json
         kubernetes-cluster:
-          gnetId: 7249   # Kubernetes cluster monitoring
-          revision: 1
-          datasource: Prometheus
+          file: dashboards/kubernetes-cluster.json
         jupyterhub:
           gnetId: 11818  # JupyterHub dashboard
           revision: 1
