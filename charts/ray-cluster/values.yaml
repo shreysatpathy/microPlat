@@ -27,12 +27,14 @@ spec:
             env:
               - name: RAY_GRAFANA_HOST
                 value: "http://kube-prometheus-stack-grafana.monitoring.svc.cluster.local"
+              - name: RAY_GRAFANA_IFRAME_HOST
+                value: "http://kube-prometheus-stack-grafana.monitoring.svc.cluster.local"
               - name: RAY_PROMETHEUS_HOST
                 value: "http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090"
               - name: RAY_PROMETHEUS_NAME
                 value: "prometheus"
               - name: RAY_GRAFANA_ORG_ID
-                value: "shreyOrg"
+                value: "1"
             ports:
               - containerPort: 8080
                 name: metrics
@@ -69,12 +71,14 @@ spec:
               env:
                 - name: RAY_GRAFANA_HOST
                   value: "http://kube-prometheus-stack-grafana.monitoring.svc.cluster.local"
+                - name: RAY_GRAFANA_IFRAME_HOST
+                  value: "http://kube-prometheus-stack-grafana.monitoring.svc.cluster.local"
                 - name: RAY_PROMETHEUS_HOST
                   value: "http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090"
                 - name: RAY_PROMETHEUS_NAME
-                  value: "Prometheus"
+                  value: "prometheus"
                 - name: RAY_GRAFANA_ORG_ID
-                  value: "shreyOrg"
+                  value: "1"
               ports:
                 - containerPort: 8080
                   name: metrics

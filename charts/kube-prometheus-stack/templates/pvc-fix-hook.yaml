@@ -1,0 +1,107 @@
+{{- if .Values.grafana.persistence.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "kube-prometheus-stack.fullname" . }}-pvc-fix
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-weight: "-1"
+    argocd.argoproj.io/sync-wave: "-1"
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+  labels:
+    {{- include "kube-prometheus-stack.labels" . | nindent 4 }}
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    metadata:
+      name: {{ include "kube-prometheus-stack.fullname" . }}-pvc-fix
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: {{ include "kube-prometheus-stack.fullname" . }}-pvc-fix
+      containers:
+      - name: pvc-fix
+        image: bitnami/kubectl:latest
+        command:
+        - /bin/bash
+        - -c
+        - |
+          set -e
+          echo "Checking for existing Grafana PVC..."
+          
+          PVC_NAME="{{ include "kube-prometheus-stack.fullname" . }}-grafana"
+          NAMESPACE="{{ .Release.Namespace }}"
+          
+          if kubectl get pvc "$PVC_NAME" -n "$NAMESPACE" &>/dev/null; then
+            echo "PVC $PVC_NAME exists, checking if it's bound..."
+            
+            STATUS=$(kubectl get pvc "$PVC_NAME" -n "$NAMESPACE" -o jsonpath='{.status.phase}')
+            if [ "$STATUS" = "Bound" ]; then
+              echo "PVC is bound, adding annotation to prevent replacement..."
+              kubectl annotate pvc "$PVC_NAME" -n "$NAMESPACE" \
+                argocd.argoproj.io/sync-options=Prune=false \
+                --overwrite || true
+              
+              echo "Removing any finalizers that might cause issues..."
+              kubectl patch pvc "$PVC_NAME" -n "$NAMESPACE" \
+                --type='merge' -p='{"metadata":{"finalizers":[]}}' || true
+            else
+              echo "PVC exists but is not bound (status: $STATUS)"
+            fi
+          else
+            echo "PVC $PVC_NAME does not exist, nothing to fix"
+          fi
+          
+          echo "PVC fix completed successfully"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "kube-prometheus-stack.fullname" . }}-pvc-fix
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-weight: "-2"
+    argocd.argoproj.io/sync-wave: "-2"
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+  labels:
+    {{- include "kube-prometheus-stack.labels" . | nindent 4 }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "kube-prometheus-stack.fullname" . }}-pvc-fix
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-weight: "-2"
+    argocd.argoproj.io/sync-wave: "-2"
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+  labels:
+    {{- include "kube-prometheus-stack.labels" . | nindent 4 }}
+rules:
+- apiGroups: [""]
+  resources: ["persistentvolumeclaims"]
+  verbs: ["get", "list", "patch", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "kube-prometheus-stack.fullname" . }}-pvc-fix
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-weight: "-2"
+    argocd.argoproj.io/sync-wave: "-2"
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+  labels:
+    {{- include "kube-prometheus-stack.labels" . | nindent 4 }}
+subjects:
+- kind: ServiceAccount
+  name: {{ include "kube-prometheus-stack.fullname" . }}-pvc-fix
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: Role
+  name: {{ include "kube-prometheus-stack.fullname" . }}-pvc-fix
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}

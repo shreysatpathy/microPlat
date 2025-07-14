@@ -91,6 +91,16 @@ kube-prometheus-stack:
     enabled: true
     adminPassword: admin  # Change this in production!
     
+    # Grafana configuration for iframe embedding (required for Ray dashboard)
+    grafana.ini:
+      security:
+        allow_embedding: true
+        cookie_secure: true
+        cookie_samesite: none
+      server:
+        enable_gzip: true
+        root_url: "%(protocol)s://%(domain)s:%(http_port)s/"
+    
     # Persistence for dashboards
     persistence:
       enabled: true
@@ -139,6 +149,16 @@ kube-prometheus-stack:
           gnetId: 11818  # JupyterHub dashboard
           revision: 1
           datasource: Prometheus
+    
+    # Service configuration for proper access
+    service:
+      type: ClusterIP
+      port: 80
+      targetPort: 3000
+      annotations:
+        # Add X-Frame-Options header for iframe support
+        nginx.ingress.kubernetes.io/configuration-snippet: |
+          add_header X-Frame-Options SAMEORIGIN always;
   
   # Alertmanager configuration
   alertmanager:

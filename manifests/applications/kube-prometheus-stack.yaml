@@ -36,8 +36,21 @@ spec:
     jsonPointers:
     - /spec/volumeName
     - /spec/resources/requests/storage
+    - /spec/storageClassName
+    - /spec/accessModes
+    - /spec/volumeMode
+    - /metadata/annotations
+    - /metadata/labels
   - group: ""
     kind: PersistentVolume
     jsonPointers:
     - /spec/claimRef/resourceVersion
     - /spec/claimRef/uid
+    - /spec/claimRef/name
+    - /spec/claimRef/namespace
+    - /metadata/annotations
+    - /metadata/labels
+  - group: apps
+    kind: StatefulSet
+    jsonPointers:
+    - /spec/volumeClaimTemplates
