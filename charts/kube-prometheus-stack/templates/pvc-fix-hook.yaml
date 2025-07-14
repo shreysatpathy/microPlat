@@ -1,80 +1,23 @@
-{{- if and .Values.kube-prometheus-stack.grafana.persistence.enabled .Values.kube-prometheus-stack.grafana.enabled }}
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: {{ include "kube-prometheus-stack.fullname" . }}-pvc-fix
-  namespace: {{ .Release.Namespace }}
-  annotations:
-    argocd.argoproj.io/hook: PreSync
-    argocd.argoproj.io/hook-weight: "-1"
-    argocd.argoproj.io/sync-wave: "-1"
-    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
-  labels:
-    {{- include "kube-prometheus-stack.labels" . | nindent 4 }}
-spec:
-  ttlSecondsAfterFinished: 300
-  template:
-    metadata:
-      name: {{ include "kube-prometheus-stack.fullname" . }}-pvc-fix
-    spec:
-      restartPolicy: OnFailure
-      serviceAccountName: {{ include "kube-prometheus-stack.fullname" . }}-pvc-fix
-      containers:
-      - name: pvc-fix
-        image: bitnami/kubectl:latest
-        command:
-        - /bin/sh
-        - -c
-        - |
-          set -e
-          echo "Checking for existing Grafana PVC..."
-          
-          PVC_NAME="{{ include "kube-prometheus-stack.fullname" . }}-grafana"
-          NAMESPACE="{{ .Release.Namespace }}"
-          
-          if kubectl get pvc "$PVC_NAME" -n "$NAMESPACE" >/dev/null 2>&1; then
-            echo "PVC $PVC_NAME exists, checking status..."
-            
-            STATUS=$(kubectl get pvc "$PVC_NAME" -n "$NAMESPACE" -o jsonpath='{.status.phase}' 2>/dev/null || echo "Unknown")
-            echo "PVC status: $STATUS"
-            
-            if [ "$STATUS" = "Bound" ]; then
-              echo "PVC is bound, adding protection annotation..."
-              kubectl annotate pvc "$PVC_NAME" -n "$NAMESPACE" \
-                argocd.argoproj.io/sync-options=Prune=false \
-                --overwrite 2>/dev/null || echo "Failed to add annotation, continuing..."
-            fi
-          else
-            echo "PVC $PVC_NAME does not exist, nothing to protect"
-          fi
-          
-          echo "PVC protection completed"
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: {{ include "kube-prometheus-stack.fullname" . }}-pvc-fix
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ include "kube-prometheus-stack.namespace" . }}
   annotations:
     argocd.argoproj.io/hook: PreSync
-    argocd.argoproj.io/hook-weight: "-2"
-    argocd.argoproj.io/sync-wave: "-2"
-    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
-  labels:
-    {{- include "kube-prometheus-stack.labels" . | nindent 4 }}
+    argocd.argoproj.io/hook-weight: "-10"
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: {{ include "kube-prometheus-stack.fullname" . }}-pvc-fix
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ include "kube-prometheus-stack.namespace" . }}
   annotations:
     argocd.argoproj.io/hook: PreSync
-    argocd.argoproj.io/hook-weight: "-2"
-    argocd.argoproj.io/sync-wave: "-2"
-    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
-  labels:
-    {{- include "kube-prometheus-stack.labels" . | nindent 4 }}
+    argocd.argoproj.io/hook-weight: "-10"
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
 rules:
 - apiGroups: [""]
   resources: ["persistentvolumeclaims"]
@@ -84,20 +27,64 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: {{ include "kube-prometheus-stack.fullname" . }}-pvc-fix
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ include "kube-prometheus-stack.namespace" . }}
   annotations:
     argocd.argoproj.io/hook: PreSync
-    argocd.argoproj.io/hook-weight: "-2"
-    argocd.argoproj.io/sync-wave: "-2"
-    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
-  labels:
-    {{- include "kube-prometheus-stack.labels" . | nindent 4 }}
+    argocd.argoproj.io/hook-weight: "-10"
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
 subjects:
 - kind: ServiceAccount
   name: {{ include "kube-prometheus-stack.fullname" . }}-pvc-fix
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ include "kube-prometheus-stack.namespace" . }}
 roleRef:
   kind: Role
   name: {{ include "kube-prometheus-stack.fullname" . }}-pvc-fix
   apiGroup: rbac.authorization.k8s.io
-{{- end }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "kube-prometheus-stack.fullname" . }}-pvc-fix
+  namespace: {{ include "kube-prometheus-stack.namespace" . }}
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-weight: "-5"
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+spec:
+  template:
+    spec:
+      serviceAccountName: {{ include "kube-prometheus-stack.fullname" . }}-pvc-fix
+      restartPolicy: OnFailure
+      containers:
+      - name: pvc-fix
+        image: bitnami/kubectl:latest
+        command:
+        - /bin/sh
+        - -c
+        - |
+          echo "Checking for existing Grafana PVC..."
+          PVC_NAME="{{ include "kube-prometheus-stack.fullname" . }}-grafana"
+          
+          if kubectl get pvc "$PVC_NAME" -n {{ include "kube-prometheus-stack.namespace" . }} 2>/dev/null; then
+            echo "Found existing PVC: $PVC_NAME"
+            
+            # Check if PVC is bound
+            STATUS=$(kubectl get pvc "$PVC_NAME" -n {{ include "kube-prometheus-stack.namespace" . }} -o jsonpath='{.status.phase}')
+            if [ "$STATUS" = "Bound" ]; then
+              echo "PVC is bound, adding protection annotation..."
+              kubectl annotate pvc "$PVC_NAME" -n {{ include "kube-prometheus-stack.namespace" . }} \
+                argocd.argoproj.io/sync-options=Prune=false --overwrite
+              
+              echo "Removing problematic finalizers if present..."
+              kubectl patch pvc "$PVC_NAME" -n {{ include "kube-prometheus-stack.namespace" . }} \
+                --type=json -p='[{"op": "remove", "path": "/metadata/finalizers"}]' 2>/dev/null || true
+              
+              echo "PVC protection applied successfully"
+            else
+              echo "PVC is not bound (status: $STATUS), no protection needed"
+            fi
+          else
+            echo "No existing Grafana PVC found, nothing to protect"
+          fi
+          
+          echo "PVC fix hook completed successfully"
