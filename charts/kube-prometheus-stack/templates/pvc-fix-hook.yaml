@@ -1,4 +1,4 @@
-{{- if .Values.grafana.persistence.enabled }}
+{{- if and .Values.kube-prometheus-stack.grafana.persistence.enabled .Values.kube-prometheus-stack.grafana.enabled }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -23,7 +23,7 @@ spec:
       - name: pvc-fix
         image: bitnami/kubectl:latest
         command:
-        - /bin/bash
+        - /bin/sh
         - -c
         - |
           set -e
@@ -32,27 +32,23 @@ spec:
           PVC_NAME="{{ include "kube-prometheus-stack.fullname" . }}-grafana"
           NAMESPACE="{{ .Release.Namespace }}"
           
-          if kubectl get pvc "$PVC_NAME" -n "$NAMESPACE" &>/dev/null; then
-            echo "PVC $PVC_NAME exists, checking if it's bound..."
+          if kubectl get pvc "$PVC_NAME" -n "$NAMESPACE" >/dev/null 2>&1; then
+            echo "PVC $PVC_NAME exists, checking status..."
             
-            STATUS=$(kubectl get pvc "$PVC_NAME" -n "$NAMESPACE" -o jsonpath='{.status.phase}')
+            STATUS=$(kubectl get pvc "$PVC_NAME" -n "$NAMESPACE" -o jsonpath='{.status.phase}' 2>/dev/null || echo "Unknown")
+            echo "PVC status: $STATUS"
+            
             if [ "$STATUS" = "Bound" ]; then
-              echo "PVC is bound, adding annotation to prevent replacement..."
+              echo "PVC is bound, adding protection annotation..."
               kubectl annotate pvc "$PVC_NAME" -n "$NAMESPACE" \
                 argocd.argoproj.io/sync-options=Prune=false \
-                --overwrite || true
-              
-              echo "Removing any finalizers that might cause issues..."
-              kubectl patch pvc "$PVC_NAME" -n "$NAMESPACE" \
-                --type='merge' -p='{"metadata":{"finalizers":[]}}' || true
-            else
-              echo "PVC exists but is not bound (status: $STATUS)"
+                --overwrite 2>/dev/null || echo "Failed to add annotation, continuing..."
             fi
           else
-            echo "PVC $PVC_NAME does not exist, nothing to fix"
+            echo "PVC $PVC_NAME does not exist, nothing to protect"
           fi
           
-          echo "PVC fix completed successfully"
+          echo "PVC protection completed"
 ---
 apiVersion: v1
 kind: ServiceAccount
