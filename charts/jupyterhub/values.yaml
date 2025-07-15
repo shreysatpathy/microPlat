@@ -4,18 +4,6 @@ jupyterhub:
     config:
       JupyterHub:
         authenticator_class: dummy
-    # These settings help with previous redirect loop issues
-    tornado_settings:
-      headers:
-        Content-Security-Policy: "frame-ancestors 'self' *"
-    extraConfig:
-      jupyterhub-cookie-config: |
-        c.JupyterHub.tornado_settings = {
-          'cookie_options': {
-            'samesite': None,
-            'secure': True
-          }
-        }
   
   singleuser:
     image:
