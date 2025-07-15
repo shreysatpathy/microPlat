@@ -20,3 +20,11 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      - Replace=true  # Force replacement of existing resources
+      - ServerSideApply=true  # Better handling of conflicts
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
