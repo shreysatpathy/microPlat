@@ -24,6 +24,8 @@ spec:
       - CreateNamespace=true
       - ServerSideApply=true
       - RespectIgnoreDifferences=true
+      - SkipDryRunOnMissingResource=true
+      - PrunePropagationPolicy=foreground
     retry:
       limit: 5
       backoff:
@@ -54,3 +56,22 @@ spec:
     kind: StatefulSet
     jsonPointers:
     - /spec/volumeClaimTemplates
+  - group: admissionregistration.k8s.io
+    kind: ValidatingAdmissionWebhook
+    jsonPointers:
+    - /webhooks
+    - /metadata/annotations
+    - /metadata/labels
+  - group: admissionregistration.k8s.io
+    kind: MutatingAdmissionWebhook
+    jsonPointers:
+    - /webhooks
+    - /metadata/annotations
+    - /metadata/labels
+  - group: ""
+    kind: Secret
+    name: kube-prometheus-stack-admission
+    jsonPointers:
+    - /data
+    - /metadata/annotations
+    - /metadata/labels

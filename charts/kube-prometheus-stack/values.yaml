@@ -195,6 +195,24 @@ kube-prometheus-stack:
       enabled: false
       patch:
         enabled: false
+      # Explicitly disable all webhook components
+      failurePolicy: Ignore
+      timeoutSeconds: 10
+      admissionReviewVersions: ["v1", "v1beta1"]
+      # Disable TLS and certificate management
+      certManager:
+        enabled: false
+      # Disable webhook service
+      service:
+        enabled: false
+    
+    # Disable TLS configuration entirely
+    tls:
+      enabled: false
+    
+    # Disable webhook-related RBAC
+    webhookRBAC:
+      enabled: false
     
     resources:
       limits:
