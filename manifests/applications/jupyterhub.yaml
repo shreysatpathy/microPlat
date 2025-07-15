@@ -24,9 +24,23 @@ spec:
       - CreateNamespace=true
       - ServerSideApply=true
       - RespectIgnoreDifferences=true
+      - Replace=false
     retry:
       limit: 3
       backoff:
         duration: 5s
         factor: 2
         maxDuration: 1m
+  ignoreDifferences:
+  - group: rbac.authorization.k8s.io
+    kind: Role
+    name: hook-image-awaiter
+    jsonPointers:
+    - /metadata/annotations
+    - /metadata/labels
+  - group: rbac.authorization.k8s.io
+    kind: RoleBinding
+    name: hook-image-awaiter
+    jsonPointers:
+    - /metadata/annotations
+    - /metadata/labels
