@@ -14,15 +14,11 @@ jupyterhub:
     extraEnv:
       RAY_ADDRESS: "ray://ray-cluster-head-svc.ml-dev.svc.cluster.local:10001"
     storage:
-      type: dynamic
-      capacity: 5Gi
-      extraVolumes:
-        - name: shared-data
-          persistentVolumeClaim:
-            claimName: shared-data-pvc
-      extraVolumeMounts:
-        - name: shared-data
-          mountPath: /home/jovyan/shared
+      type: static
+      homeMountPath: /home/jovyan
+      staticPvc:
+        pvcName: claim-admin
+        subPath: "{username}"
     profileList:
       - display_name: "Default: CPU"
         description: "Default profile with CPU resources"
