@@ -19,8 +19,23 @@ singleuser:
   extraEnv:
     RAY_ADDRESS: "ray://ray-head:10001"
 
+# Disable hooks to prevent RBAC conflicts
+prePuller:
+  enabled: false
+  hook:
+    enabled: false
+  continuous:
+    enabled: false
+
 hub:
+  image:
+    name: quay.io/jupyterhub/k8s-hub
+    tag: "4.2.0"
   config:
+    Authenticator:
+      admin_users:
+        - admin
+      admin_access: true
     JupyterHub:
       admin_access: true
   db:
@@ -32,9 +47,6 @@ auth:
   type: dummy
   dummy:
     password: "mlplatform"
-
-prePuller:
-  enabled: false
 
 rbac:
   create: true
