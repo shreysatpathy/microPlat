@@ -7,9 +7,9 @@ jupyterhub:
   
   singleuser:
     image:
-      # This will be built from docker/notebook/Dockerfile
-      name: jupyterhub/jupyterhub
-      tag: latest
+      # Use the official jupyter/scipy-notebook image directly
+      name: jupyter/scipy-notebook
+      tag: python-3.11
     cmd: ["jupyterhub-singleuser"]
     extraEnv:
       RAY_ADDRESS: "ray://ray-cluster-head-svc.ml-dev.svc.cluster.local:10001"
