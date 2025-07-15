@@ -1,17 +1,10 @@
 apiVersion: v2
-name: jupyterhub-platform
-description: Wrapper chart that pulls the official JupyterHub Helm chart and applies opinionated defaults for the ML platform.
-
-# Chart type
+name: jupyterhub
+description: JupyterHub Helm chart for ML Platform
 type: application
-
-# This chart’s own version (arbitrary – bump when you change *this* wrapper chart)
-version: 0.2.0
-
-# The version of the upstream application (for info only)
-appVersion: "4.2.0"
-
+version: 0.1.0
+appVersion: "5.0.0"
 dependencies:
   - name: jupyterhub
-    version: "4.2.0"  # pick a stable version from https://jupyterhub.github.io/helm-chart/
-    repository: "https://jupyterhub.github.io/helm-chart/"
+    version: 4.2.0
+    repository: https://jupyterhub.github.io/helm-chart/

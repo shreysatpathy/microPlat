@@ -2,6 +2,8 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: jupyterhub
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   destination:
     namespace: ml-dev
@@ -20,11 +22,11 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
-      - Replace=true  # Force replacement of existing resources
-      - ServerSideApply=true  # Better handling of conflicts
+      - ServerSideApply=true
+      - RespectIgnoreDifferences=true
     retry:
-      limit: 5
+      limit: 3
       backoff:
         duration: 5s
         factor: 2
-        maxDuration: 3m
+        maxDuration: 1m

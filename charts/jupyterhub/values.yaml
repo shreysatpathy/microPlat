@@ -1,52 +1,65 @@
-# Default values for jupyterhub-platform wrapper chart.
-
-proxy:
-  secretToken: "REPLACE_ME_WITH_HELM_GENERATED"
-  service:
-    type: ClusterIP
-
-singleuser:
-  image:
-    name: ghcr.io/${REGISTRY_OWNER}/ml-platform-notebook
-    tag: "latest"
-    pullPolicy: IfNotPresent
+jupyterhub:
+  hub:
+    config:
+      JupyterHub:
+        authenticator_class: dummy
+  
+  singleuser:
+    image:
+      # This will be built from docker/notebook/Dockerfile
+      name: microplat/notebook
+      tag: latest
+    cmd: ["jupyterhub-singleuser"]
+    extraEnv:
+      RAY_ADDRESS: "ray://ray-cluster-head-svc.ml-dev.svc.cluster.local:10001"
+    storage:
+      capacity: 5Gi
+    profileList:
+      - display_name: "Default: CPU"
+        description: "Default profile with CPU resources"
+        default: true
+        kubespawner_override:
+          cpu_limit: 2
+          cpu_guarantee: 0.5
+          mem_limit: "4G"
+          mem_guarantee: "1G"
+      - display_name: "Medium: More CPU & Memory"
+        description: "More CPU and memory for larger workloads"
+        kubespawner_override:
+          cpu_limit: 4
+          cpu_guarantee: 1
+          mem_limit: "8G"
+          mem_guarantee: "2G"
+  
+  # Enable persistent storage for user notebooks
   storage:
-    type: pvc
-    capacity: 10Gi
-    dynamic:
-      storageClass: standard # swap for your StorageClass
-  defaultUrl: "/lab"
-  extraEnv:
-    RAY_ADDRESS: "ray://ray-head:10001"
+    type: dynamic
+    capacity: 5Gi
+    extraVolumes:
+      - name: shared-data
+        persistentVolumeClaim:
+          claimName: shared-data-pvc
+    extraVolumeMounts:
+      - name: shared-data
+        mountPath: /home/jovyan/shared
 
-# Disable hooks to prevent RBAC conflicts
-prePuller:
-  enabled: false
-  hook:
+  # Allow services to communicate with each other
+  # These settings help with previous redirect loop issues
+  tornado_settings:
+    headers:
+      Content-Security-Policy: "frame-ancestors 'self' *"
+    cookie_options:
+      samesite: None
+      secure: true
+      
+  ingress:
     enabled: false
-  continuous:
-    enabled: false
 
-hub:
-  image:
-    name: quay.io/jupyterhub/k8s-hub
-    tag: "4.2.0"
-  config:
-    Authenticator:
-      admin_users:
-        - admin
-      admin_access: true
-    JupyterHub:
-      admin_access: true
-  db:
-    pvc:
-      storageClassName: standard
-
-# Allow OAuth or dummy auth later
-auth:
-  type: dummy
-  dummy:
-    password: "mlplatform"
-
-rbac:
-  create: true
+# Add necessary resource settings
+resources:
+  requests:
+    cpu: 200m
+    memory: 512Mi
+  limits:
+    cpu: 1
+    memory: 1Gi
