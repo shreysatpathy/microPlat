@@ -1,53 +1,40 @@
-jupyterhub:
-  enabled: true
-  hub:
-    config:
-      JupyterHub:
-        authenticator_class: dummy
-  
-  singleuser:
-    image:
-      # Use the official jupyter/scipy-notebook image directly
-      name: jupyter/scipy-notebook
-      tag: python-3.11
-    cmd: ["jupyterhub-singleuser"]
-    extraEnv:
-      RAY_ADDRESS: "ray://ray-cluster-head-svc.ml-dev.svc.cluster.local:10001"
-    storage:
-      type: static
-      homeMountPath: /home/jovyan
-      staticPvc:
-        pvcName: claim-admin
-        subPath: "{username}"
-    profileList:
-      - display_name: "Default: CPU"
-        description: "Default profile with CPU resources"
-        default: true
-        kubespawner_override:
-          cpu_limit: 2
-          cpu_guarantee: 0.5
-          mem_limit: "4G"
-          mem_guarantee: "1G"
-      - display_name: "Medium: More CPU & Memory"
-        description: "More CPU and memory for larger workloads"
-        kubespawner_override:
-          cpu_limit: 4
-          cpu_guarantee: 1
-          mem_limit: "8G"
-          mem_guarantee: "2G"
-    
-  proxy:
-    service:
-      type: ClusterIP
-  
-  ingress:
-    enabled: false
+# Default values for jupyterhub-platform wrapper chart.
 
-  # Resource settings
-  scheduling:
-    userScheduler:
-      enabled: false
-    userPlaceholder:
-      enabled: false
-    podPriority:
-      enabled: false
+proxy:
+  secretToken: "REPLACE_ME_WITH_HELM_GENERATED"
+  service:
+    type: ClusterIP
+
+singleuser:
+  image:
+    name: ghcr.io/${REGISTRY_OWNER}/ml-platform-notebook
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  storage:
+    type: pvc
+    capacity: 5Gi
+    dynamic:
+      storageClass: standard # swap for your StorageClass
+  defaultUrl: "/lab"
+  extraEnv:
+    RAY_ADDRESS: "ray://ray-cluster-head-svc.ml-dev.svc.cluster.local:10001"
+
+hub:
+  config:
+    JupyterHub:
+      admin_access: true
+  db:
+    pvc:
+      storageClassName: longhorn
+
+# Allow OAuth or dummy auth later
+auth:
+  type: dummy
+  dummy:
+    password: "mlplatform"
+
+prePuller:
+  enabled: false
+
+rbac:
+  create: true
