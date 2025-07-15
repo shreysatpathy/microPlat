@@ -8,7 +8,7 @@ jupyterhub:
   singleuser:
     image:
       # This will be built from docker/notebook/Dockerfile
-      name: microplat/notebook
+      name: jupyterhub/jupyterhub
       tag: latest
     cmd: ["jupyterhub-singleuser"]
     extraEnv:
