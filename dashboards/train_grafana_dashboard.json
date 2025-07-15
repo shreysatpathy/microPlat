@@ -1,0 +1,569 @@
+{
+    "title": "Train Dashboard",
+    "uid": "rayTrainDashboard",
+    "version": 1,
+    "schemaVersion": 27,
+    "style": "dark",
+    "editable": true,
+    "graphTooltip": 1,
+    "refresh": false,
+    "panels": [
+        {
+            "aliasColors": {},
+            "bars": false,
+            "dashLength": 10,
+            "dashes": false,
+            "datasource": "${datasource}",
+            "description": "Time taken to report a checkpoint to storage.",
+            "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 0
+            },
+            "fill": 0,
+            "fillGradient": 0,
+            "hiddenSeries": false,
+            "id": 1,
+            "legend": {
+                "alignAsTable": true,
+                "avg": false,
+                "current": true,
+                "hideEmpty": false,
+                "hideZero": true,
+                "max": false,
+                "min": false,
+                "rightSide": false,
+                "show": true,
+                "sort": "current",
+                "sortDesc": true,
+                "total": false,
+                "values": true
+            },
+            "lines": true,
+            "linewidth": 1,
+            "nullPointMode": null,
+            "options": {
+                "alertThreshold": true
+            },
+            "percentage": false,
+            "pluginVersion": "7.5.17",
+            "pointradius": 2,
+            "points": false,
+            "renderer": "flot",
+            "seriesOverrides": [
+                {
+                    "$$hashKey": "object:2987",
+                    "alias": "MAX",
+                    "dashes": true,
+                    "color": "#1F60C4",
+                    "fill": 0,
+                    "stack": false
+                },
+                {
+                    "$$hashKey": "object:78",
+                    "alias": "/FINISHED|FAILED|DEAD|REMOVED|Failed Nodes:/",
+                    "hiddenSeries": true
+                },
+                {
+                    "$$hashKey": "object:2987",
+                    "alias": "MAX + PENDING",
+                    "dashes": true,
+                    "color": "#777777",
+                    "fill": 0,
+                    "stack": false
+                }
+            ],
+            "spaceLength": 10,
+            "stack": false,
+            "steppedLine": false,
+            "targets": [
+                {
+                    "exemplar": true,
+                    "expr": "sum(ray_train_report_total_blocked_time_s{ray_train_worker_world_rank=~'$TrainWorkerWorldRank', ray_train_worker_actor_id=~'$TrainWorkerActorId', SessionName=~\"$SessionName\",ray_train_run_name=~\"$TrainRunName\",ray_train_run_id=~\"$TrainRunId\",}) by (ray_train_run_name, ray_train_worker_world_rank, ray_train_worker_actor_id)",
+                    "interval": "",
+                    "legendFormat": "Run Name: {{ray_train_run_name}}, World Rank: {{ray_train_worker_world_rank}}",
+                    "queryType": "randomWalk",
+                    "refId": "A"
+                }
+            ],
+            "thresholds": [],
+            "timeFrom": null,
+            "timeRegions": [],
+            "timeShift": null,
+            "title": "Checkpoint Report Time",
+            "tooltip": {
+                "shared": true,
+                "sort": 0,
+                "value_type": "individual"
+            },
+            "type": "graph",
+            "xaxis": {
+                "buckets": null,
+                "mode": "time",
+                "name": null,
+                "show": true,
+                "values": []
+            },
+            "yaxes": [
+                {
+                    "$$hashKey": "object:628",
+                    "format": "seconds",
+                    "label": "",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                },
+                {
+                    "$$hashKey": "object:629",
+                    "format": "short",
+                    "label": null,
+                    "logBase": 1,
+                    "max": null,
+                    "min": null,
+                    "show": true
+                }
+            ],
+            "yaxis": {
+                "align": false,
+                "alignLevel": null
+            }
+        },
+        {
+            "aliasColors": {},
+            "bars": false,
+            "dashLength": 10,
+            "dashes": false,
+            "datasource": "${datasource}",
+            "description": "Time taken by the controller to perform various operations.",
+            "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 0
+            },
+            "fill": 0,
+            "fillGradient": 0,
+            "hiddenSeries": false,
+            "id": 2,
+            "legend": {
+                "alignAsTable": true,
+                "avg": false,
+                "current": true,
+                "hideEmpty": false,
+                "hideZero": true,
+                "max": false,
+                "min": false,
+                "rightSide": false,
+                "show": true,
+                "sort": "current",
+                "sortDesc": true,
+                "total": false,
+                "values": true
+            },
+            "lines": true,
+            "linewidth": 1,
+            "nullPointMode": null,
+            "options": {
+                "alertThreshold": true
+            },
+            "percentage": false,
+            "pluginVersion": "7.5.17",
+            "pointradius": 2,
+            "points": false,
+            "renderer": "flot",
+            "seriesOverrides": [
+                {
+                    "$$hashKey": "object:2987",
+                    "alias": "MAX",
+                    "dashes": true,
+                    "color": "#1F60C4",
+                    "fill": 0,
+                    "stack": false
+                },
+                {
+                    "$$hashKey": "object:78",
+                    "alias": "/FINISHED|FAILED|DEAD|REMOVED|Failed Nodes:/",
+                    "hiddenSeries": true
+                },
+                {
+                    "$$hashKey": "object:2987",
+                    "alias": "MAX + PENDING",
+                    "dashes": true,
+                    "color": "#777777",
+                    "fill": 0,
+                    "stack": false
+                }
+            ],
+            "spaceLength": 10,
+            "stack": false,
+            "steppedLine": false,
+            "targets": [
+                {
+                    "exemplar": true,
+                    "expr": "sum(ray_train_worker_group_start_total_time_s{SessionName=~\"$SessionName\",ray_train_run_name=~\"$TrainRunName\",ray_train_run_id=~\"$TrainRunId\",}) by (ray_train_run_name)",
+                    "interval": "",
+                    "legendFormat": "Run Name: {{ray_train_run_name}}, Worker Group Start Time",
+                    "queryType": "randomWalk",
+                    "refId": "A"
+                },
+                {
+                    "exemplar": true,
+                    "expr": "sum(ray_train_worker_group_shutdown_total_time_s{SessionName=~\"$SessionName\",ray_train_run_name=~\"$TrainRunName\",ray_train_run_id=~\"$TrainRunId\",}) by (ray_train_run_name)",
+                    "interval": "",
+                    "legendFormat": "Run Name: {{ray_train_run_name}}, Worker Group Shutdown Time",
+                    "queryType": "randomWalk",
+                    "refId": "B"
+                }
+            ],
+            "thresholds": [],
+            "timeFrom": null,
+            "timeRegions": [],
+            "timeShift": null,
+            "title": "Train Controller Operation Time",
+            "tooltip": {
+                "shared": true,
+                "sort": 0,
+                "value_type": "individual"
+            },
+            "type": "graph",
+            "xaxis": {
+                "buckets": null,
+                "mode": "time",
+                "name": null,
+                "show": true,
+                "values": []
+            },
+            "yaxes": [
+                {
+                    "$$hashKey": "object:628",
+                    "format": "seconds",
+                    "label": "",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                },
+                {
+                    "$$hashKey": "object:629",
+                    "format": "short",
+                    "label": null,
+                    "logBase": 1,
+                    "max": null,
+                    "min": null,
+                    "show": true
+                }
+            ],
+            "yaxis": {
+                "align": false,
+                "alignLevel": null
+            }
+        },
+        {
+            "aliasColors": {},
+            "bars": false,
+            "dashLength": 10,
+            "dashes": false,
+            "datasource": "${datasource}",
+            "description": "State of the train controller.",
+            "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 1
+            },
+            "fill": 10,
+            "fillGradient": 0,
+            "hiddenSeries": false,
+            "id": 3,
+            "legend": {
+                "alignAsTable": true,
+                "avg": false,
+                "current": true,
+                "hideEmpty": false,
+                "hideZero": true,
+                "max": false,
+                "min": false,
+                "rightSide": false,
+                "show": true,
+                "sort": "current",
+                "sortDesc": true,
+                "total": false,
+                "values": true
+            },
+            "lines": true,
+            "linewidth": 1,
+            "nullPointMode": "connected",
+            "options": {
+                "alertThreshold": true
+            },
+            "percentage": false,
+            "pluginVersion": "7.5.17",
+            "pointradius": 2,
+            "points": false,
+            "renderer": "flot",
+            "seriesOverrides": [
+                {
+                    "$$hashKey": "object:2987",
+                    "alias": "MAX",
+                    "dashes": true,
+                    "color": "#1F60C4",
+                    "fill": 0,
+                    "stack": false
+                },
+                {
+                    "$$hashKey": "object:78",
+                    "alias": "/FINISHED|FAILED|DEAD|REMOVED|Failed Nodes:/",
+                    "hiddenSeries": true
+                },
+                {
+                    "$$hashKey": "object:2987",
+                    "alias": "MAX + PENDING",
+                    "dashes": true,
+                    "color": "#777777",
+                    "fill": 0,
+                    "stack": false
+                }
+            ],
+            "spaceLength": 10,
+            "stack": true,
+            "steppedLine": false,
+            "targets": [
+                {
+                    "exemplar": true,
+                    "expr": "sum(ray_train_controller_state{SessionName=~\"$SessionName\",ray_train_run_name=~\"$TrainRunName\",ray_train_run_id=~\"$TrainRunId\",}) by (ray_train_run_name, ray_train_controller_state)",
+                    "interval": "",
+                    "legendFormat": "Run Name: {{ray_train_run_name}}, Controller State: {{ray_train_controller_state}}",
+                    "queryType": "randomWalk",
+                    "refId": "A"
+                }
+            ],
+            "thresholds": [],
+            "timeFrom": null,
+            "timeRegions": [],
+            "timeShift": null,
+            "title": "Train Controller State",
+            "tooltip": {
+                "shared": true,
+                "sort": 0,
+                "value_type": "individual"
+            },
+            "type": "graph",
+            "xaxis": {
+                "buckets": null,
+                "mode": "time",
+                "name": null,
+                "show": true,
+                "values": []
+            },
+            "yaxes": [
+                {
+                    "$$hashKey": "object:628",
+                    "format": "",
+                    "label": "",
+                    "logBase": 1,
+                    "max": null,
+                    "min": "0",
+                    "show": true
+                },
+                {
+                    "$$hashKey": "object:629",
+                    "format": "short",
+                    "label": null,
+                    "logBase": 1,
+                    "max": null,
+                    "min": null,
+                    "show": true
+                }
+            ],
+            "yaxis": {
+                "align": false,
+                "alignLevel": null
+            }
+        }
+    ],
+    "time": {
+        "from": "now-30m",
+        "to": "now"
+    },
+    "annotations": {
+        "list": [
+            {
+                "builtIn": 1,
+                "datasource": "-- Grafana --",
+                "enable": true,
+                "hide": true,
+                "iconColor": "rgba(0, 211, 255, 1)",
+                "name": "Annotations & Alerts",
+                "type": "dashboard"
+            }
+        ]
+    },
+    "templating": {
+        "list": [
+            {
+                "name": "datasource",
+                "type": "datasource",
+                "description": "Filter queries of a specific Prometheus type.",
+                "datasource": null,
+                "query": "prometheus",
+                "refresh": 1,
+                "hide": 2,
+                "includeAll": false,
+                "multi": false,
+                "current": {
+                    "selected": false
+                }
+            },
+            {
+                "name": "SessionName",
+                "type": "query",
+                "description": "Filter queries to specific ray sessions.",
+                "datasource": "${datasource}",
+                "definition": "label_values(ray_train_worker_group_start_total_time_s{}, SessionName)",
+                "query": {
+                    "query": "label_values(ray_train_worker_group_start_total_time_s{}, SessionName)",
+                    "refId": "StandardVariableQuery"
+                },
+                "refresh": 1,
+                "hide": 0,
+                "includeAll": true,
+                "multi": false,
+                "allValue": ".*",
+                "sort": 2,
+                "current": {
+                    "selected": true,
+                    "text": [
+                        "All"
+                    ],
+                    "value": [
+                        "$__all"
+                    ]
+                }
+            },
+            {
+                "name": "TrainRunName",
+                "type": "query",
+                "description": "Filter queries to specific Ray Train run names.",
+                "datasource": "${datasource}",
+                "definition": "label_values(ray_train_worker_group_start_total_time_s{}, ray_train_run_name)",
+                "query": {
+                    "query": "label_values(ray_train_worker_group_start_total_time_s{}, ray_train_run_name)",
+                    "refId": "StandardVariableQuery"
+                },
+                "refresh": 1,
+                "hide": 0,
+                "includeAll": true,
+                "multi": false,
+                "allValue": ".*",
+                "sort": 2,
+                "current": {
+                    "selected": true,
+                    "text": [
+                        "All"
+                    ],
+                    "value": [
+                        "$__all"
+                    ]
+                }
+            },
+            {
+                "name": "TrainRunId",
+                "type": "query",
+                "description": "Filter queries to specific Ray Train run ids.",
+                "datasource": "${datasource}",
+                "definition": "label_values(ray_train_worker_group_start_total_time_s{}, ray_train_run_id)",
+                "query": {
+                    "query": "label_values(ray_train_worker_group_start_total_time_s{}, ray_train_run_id)",
+                    "refId": "StandardVariableQuery"
+                },
+                "refresh": 1,
+                "hide": 2,
+                "includeAll": true,
+                "multi": false,
+                "allValue": ".*",
+                "sort": 2,
+                "current": {
+                    "selected": true,
+                    "text": [
+                        "All"
+                    ],
+                    "value": [
+                        "$__all"
+                    ]
+                }
+            },
+            {
+                "name": "TrainWorkerWorldRank",
+                "type": "query",
+                "description": "Filter queries to specific Ray Train worker world ranks.",
+                "datasource": "${datasource}",
+                "definition": "label_values(ray_train_report_total_blocked_time_s{}, ray_train_worker_world_rank)",
+                "query": {
+                    "query": "label_values(ray_train_report_total_blocked_time_s{}, ray_train_worker_world_rank)",
+                    "refId": "StandardVariableQuery"
+                },
+                "refresh": 1,
+                "hide": 0,
+                "includeAll": true,
+                "multi": false,
+                "allValue": ".*",
+                "sort": 2,
+                "current": {
+                    "selected": true,
+                    "text": [
+                        "All"
+                    ],
+                    "value": [
+                        "$__all"
+                    ]
+                }
+            },
+            {
+                "name": "TrainWorkerActorId",
+                "type": "query",
+                "description": "Filter queries to specific Ray Train worker actor ids.",
+                "datasource": "${datasource}",
+                "definition": "label_values(ray_train_report_total_blocked_time_s{}, ray_train_worker_actor_id)",
+                "query": {
+                    "query": "label_values(ray_train_report_total_blocked_time_s{}, ray_train_worker_actor_id)",
+                    "refId": "StandardVariableQuery"
+                },
+                "refresh": 1,
+                "hide": 2,
+                "includeAll": true,
+                "multi": false,
+                "allValue": ".*",
+                "sort": 2,
+                "current": {
+                    "selected": true,
+                    "text": [
+                        "All"
+                    ],
+                    "value": [
+                        "$__all"
+                    ]
+                }
+            }
+        ]
+    },
+    "tags": [
+        "rayVersion:2.47.0"
+    ],
+    "rayMeta": [
+        "supportsGlobalFilterOverride"
+    ]
+}

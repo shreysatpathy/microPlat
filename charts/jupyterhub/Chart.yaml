@@ -6,12 +6,12 @@ description: Wrapper chart that pulls the official JupyterHub Helm chart and app
 type: application
 
 # This chart’s own version (arbitrary – bump when you change *this* wrapper chart)
-version: 0.1.0
+version: 0.2.0
 
 # The version of the upstream application (for info only)
-appVersion: "3.2.1"
+appVersion: "4.0.2"
 
 dependencies:
   - name: jupyterhub
-    version: "3.2.1"  # pick a stable version from https://jupyterhub.github.io/helm-chart/
+    version: "4.0.2"  # pick a stable version from https://jupyterhub.github.io/helm-chart/
     repository: "https://jupyterhub.github.io/helm-chart/"
