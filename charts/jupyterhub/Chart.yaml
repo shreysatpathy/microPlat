@@ -9,9 +9,9 @@ type: application
 version: 0.2.0
 
 # The version of the upstream application (for info only)
-appVersion: "4.0.2"
+appVersion: "4.2.0"
 
 dependencies:
   - name: jupyterhub
-    version: "4.0.2"  # pick a stable version from https://jupyterhub.github.io/helm-chart/
+    version: "4.2.0"  # pick a stable version from https://jupyterhub.github.io/helm-chart/
     repository: "https://jupyterhub.github.io/helm-chart/"

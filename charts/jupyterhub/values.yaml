@@ -14,7 +14,7 @@ singleuser:
     type: pvc
     capacity: 10Gi
     dynamic:
-      storageClass: longhorn # swap for your StorageClass
+      storageClass: standard # swap for your StorageClass
   defaultUrl: "/lab"
   extraEnv:
     RAY_ADDRESS: "ray://ray-head:10001"
@@ -25,7 +25,7 @@ hub:
       admin_access: true
   db:
     pvc:
-      storageClassName: longhorn
+      storageClassName: standard
 
 # Allow OAuth or dummy auth later
 auth:
