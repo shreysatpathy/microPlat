@@ -10,6 +10,7 @@ singleuser:
     name: ghcr.io/${REGISTRY_OWNER}/ml-platform-notebook
     tag: "latest"
     pullPolicy: IfNotPresent
+  cmd: ["jupyterhub-singleuser"]
   storage:
     type: pvc
     capacity: 5Gi
@@ -18,6 +19,14 @@ singleuser:
   defaultUrl: "/lab"
   extraEnv:
     RAY_ADDRESS: "ray://ray-cluster-head-svc.ml-dev.svc.cluster.local:10001"
+  
+  # Add tornado settings for JupyterHub 4.x compatibility
+  extraConfig:
+    tornado: |
+      c.Spawner.environment = {
+        'JUPYTERHUB_SINGLEUSER_APP': 'jupyter_server.serverapp.ServerApp',
+      }
+      c.Spawner.cmd = ['jupyterhub-singleuser']
 
 hub:
   config:
