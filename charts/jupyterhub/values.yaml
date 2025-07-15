@@ -1,8 +1,21 @@
 jupyterhub:
+  enabled: true
   hub:
     config:
       JupyterHub:
         authenticator_class: dummy
+    # These settings help with previous redirect loop issues
+    tornado_settings:
+      headers:
+        Content-Security-Policy: "frame-ancestors 'self' *"
+    extraConfig:
+      jupyterhub-cookie-config: |
+        c.JupyterHub.tornado_settings = {
+          'cookie_options': {
+            'samesite': None,
+            'secure': True
+          }
+        }
   
   singleuser:
     image:
@@ -13,7 +26,15 @@ jupyterhub:
     extraEnv:
       RAY_ADDRESS: "ray://ray-cluster-head-svc.ml-dev.svc.cluster.local:10001"
     storage:
+      type: dynamic
       capacity: 5Gi
+      extraVolumes:
+        - name: shared-data
+          persistentVolumeClaim:
+            claimName: shared-data-pvc
+      extraVolumeMounts:
+        - name: shared-data
+          mountPath: /home/jovyan/shared
     profileList:
       - display_name: "Default: CPU"
         description: "Default profile with CPU resources"
@@ -30,36 +51,19 @@ jupyterhub:
           cpu_guarantee: 1
           mem_limit: "8G"
           mem_guarantee: "2G"
+    
+  proxy:
+    service:
+      type: ClusterIP
   
-  # Enable persistent storage for user notebooks
-  storage:
-    type: dynamic
-    capacity: 5Gi
-    extraVolumes:
-      - name: shared-data
-        persistentVolumeClaim:
-          claimName: shared-data-pvc
-    extraVolumeMounts:
-      - name: shared-data
-        mountPath: /home/jovyan/shared
-
-  # Allow services to communicate with each other
-  # These settings help with previous redirect loop issues
-  tornado_settings:
-    headers:
-      Content-Security-Policy: "frame-ancestors 'self' *"
-    cookie_options:
-      samesite: None
-      secure: true
-      
   ingress:
     enabled: false
 
-# Add necessary resource settings
-resources:
-  requests:
-    cpu: 200m
-    memory: 512Mi
-  limits:
-    cpu: 1
-    memory: 1Gi
+  # Resource settings
+  scheduling:
+    userScheduler:
+      enabled: false
+    userPlaceholder:
+      enabled: false
+    podPriority:
+      enabled: false
