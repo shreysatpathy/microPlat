@@ -18,7 +18,7 @@ proxy:
 singleuser:
   image:
     name: quay.io/jupyterhub/k8s-singleuser-sample
-    tag: "set-by-chartpress"
+    tag: "latest"
     pullPolicy: IfNotPresent
   defaultUrl: "/lab"
   storage:
