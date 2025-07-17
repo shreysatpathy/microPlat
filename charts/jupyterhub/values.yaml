@@ -191,6 +191,9 @@ proxy:
     type: LoadBalancer
     labels: {}
     annotations: {}
+    ports:
+      http: 8000
+      https: 8443
     nodePorts:
       http:
       https:
