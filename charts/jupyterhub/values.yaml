@@ -36,6 +36,7 @@ hub:
     JupyterHub:
       admin_access: true
       authenticator_class: dummy
+      port: 8000
   service:
     type: ClusterIP
     annotations: {}
@@ -191,9 +192,6 @@ proxy:
     type: LoadBalancer
     labels: {}
     annotations: {}
-    ports:
-      http: 8000
-      https: 8443
     nodePorts:
       http:
       https:
