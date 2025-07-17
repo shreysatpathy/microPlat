@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-proxy
+spec:
+  type: {{ .Values.proxy.service.type }}
+  selector:
+    component: proxy
+  ports:
+  - name: http
+    port: 8000
+    targetPort: 8000

@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-hub
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: hub
+  template:
+    metadata:
+      labels:
+        component: hub
+    spec:
+      imagePullSecrets: {{ toYaml .Values.imagePullSecrets | indent 6 }}
+      containers:
+      - name: hub
+        image: "{{ .Values.hub.image.name }}:{{ .Values.hub.image.tag }}"
+        imagePullPolicy: {{ .Values.hub.image.pullPolicy }}
+        args:
+        - jupyterhub
+        - --no-ssl
+        - --SingleUser.default_url={{ .Values.singleuser.defaultUrl }}
+        ports:
+        - containerPort: 8000

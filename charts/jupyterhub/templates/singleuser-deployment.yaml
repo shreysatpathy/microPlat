@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-singleuser
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: singleuser
+  template:
+    metadata:
+      labels:
+        component: singleuser
+    spec:
+      imagePullSecrets: {{ toYaml .Values.imagePullSecrets | indent 6 }}
+      containers:
+      - name: singleuser
+        image: "{{ .Values.singleuser.image.name }}:{{ .Values.singleuser.image.tag }}"
+        imagePullPolicy: {{ .Values.singleuser.image.pullPolicy }}
+        args:
+        - start-singleuser.sh
+        - --NotebookApp.default_url={{ .Values.singleuser.defaultUrl }}
+        ports:
+        - containerPort: 8888
