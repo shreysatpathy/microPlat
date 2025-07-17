@@ -1,4 +1,6 @@
 # Minimal JupyterHub configuration for GitOps with ArgoCD
+imagePullSecrets: []
+
 hub:
   config:
     JupyterHub:
@@ -18,6 +20,8 @@ hub:
     tag: "4.2.0"
   service:
     type: ClusterIP
+  # Required by schema
+  baseUrl: /
 
 proxy:
   # Generate with: openssl rand -hex 32
@@ -39,6 +43,8 @@ singleuser:
     capacity: 1Gi
     dynamic:
       storageClass: standard
+    # Required by schema
+    homeMountPath: /home/jovyan
   memory:
     guarantee: 512M
     limit: 1G
@@ -46,6 +52,13 @@ singleuser:
 scheduling:
   userScheduler:
     enabled: false  # Simplify deployment for minimal setup
+    # Required by schema even when disabled
+    logLevel: 4
+    plugins:
+      score:
+        disabled: []
+        enabled: []
+    pluginConfig: []
   userPlaceholder:
     enabled: false
 
@@ -55,8 +68,25 @@ prePuller:
   continuous:
     enabled: false
 
+# Required by schema
+ingress:
+  enabled: false
+  
+# Required by schema
+custom: {}
+
+# Required by schema
+cull:
+  enabled: true
+  timeout: 3600
+  every: 600
+
 debug:
   enabled: false
 
 rbac:
   create: true
+  
+# Required by schema
+global:
+  safeToShowValues: false
