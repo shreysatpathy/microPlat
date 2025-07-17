@@ -21,12 +21,11 @@ singleuser:
     pullPolicy: IfNotPresent
   defaultUrl: "/lab"
   storage:
-    type: dynamic  # Use "static" for pre-provisioned PVCs
-    capacity: 10Gi
+    type: dynamic  # Use "static" if you manually manage PVCs
     homeMountPath: /home/jovyan
+    capacity: 10Gi
     dynamic:
-      storageClass: standard  # Replace with your actual StorageClass name
-    pvcNameTemplate: "claim-{username}"
+      storageClass: standard  # Replace with your actual storage class
 
 ingress:
   enabled: false
