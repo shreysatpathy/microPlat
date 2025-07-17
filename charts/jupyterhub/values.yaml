@@ -37,6 +37,9 @@ hub:
       admin_access: true
       authenticator_class: dummy
       port: 8000
+      tornado_settings:
+        headers:
+          Content-Security-Policy: "frame-ancestors 'self'"
   service:
     type: ClusterIP
     annotations: {}
