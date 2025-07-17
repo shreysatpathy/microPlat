@@ -64,13 +64,17 @@ hub:
     type: sqlite-pvc
     upgrade:
     pvc:
-      annotations: {}
+      annotations:
+        # Add this annotation to solve the sync error
+        argocd.argoproj.io/ignore-differences: |
+          - jsonPointers:
+          - /spec/volumeName
       selector: {}
       accessModes:
         - ReadWriteOnce
       storage: 1Gi
       subPath:
-      storageClassName:
+      storageClassName: standard
     url:
     password:
   labels: {}
