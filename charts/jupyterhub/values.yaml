@@ -415,7 +415,7 @@ singleuser:
     capacity: 10Gi
     homeMountPath: /home/jovyan
     dynamic:
-      storageClass:
+      storageClass: standard
       pvcNameTemplate:
       volumeNameTemplate: volume-{user_server}
       storageAccessModes: [ReadWriteOnce]
