@@ -18,7 +18,7 @@ proxy:
 singleuser:
   image:
     name: quay.io/jupyterhub/k8s-singleuser-sample
-    tag: "latest"
+    tag: "4.2.0"
     pullPolicy: IfNotPresent
   defaultUrl: "/lab"
   storage:
