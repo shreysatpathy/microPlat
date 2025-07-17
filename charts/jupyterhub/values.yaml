@@ -14,9 +14,6 @@ proxy:
       tag: "latest"
   service:
     type: ClusterIP  # or LoadBalancer, depending on your setup
-    ports:
-      http: 80
-      https: 443
 
 singleuser:
   image:
