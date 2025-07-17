@@ -3,7 +3,7 @@ imagePullSecrets: []
 hub:
   baseUrl: "/"
   image:
-    name: jupyterhub/jupyterhub
+    name: quay.io/jupyterhub/k8s-hub
     tag: "4.2.0"
     pullPolicy: IfNotPresent
 
