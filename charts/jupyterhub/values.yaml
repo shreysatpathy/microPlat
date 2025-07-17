@@ -439,7 +439,7 @@ singleuser:
 # scheduling relates to the user-scheduler pods and user-placeholder pods.
 scheduling:
   userScheduler:
-    enabled: true
+    enabled: false
     revisionHistoryLimit:
     replicas: 2
     logLevel: 4
