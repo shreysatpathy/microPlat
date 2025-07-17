@@ -1,98 +1,55 @@
-# Minimal JupyterHub configuration for GitOps with ArgoCD
 imagePullSecrets: []
 
+# No imagePullSecret creation
+imagePullSecret:
+  create: false
+
 hub:
-  config:
-    JupyterHub:
-      admin_access: true
-      authenticator_class: dummy
-      port: 8000
-      tornado_settings:
-        headers:
-          Content-Security-Policy: "frame-ancestors 'self'"
-  extraConfig:
-    compatibility: |
-      c.Spawner.environment = {
-          'JUPYTERHUB_SINGLEUSER_APP': 'notebook.notebookapp.NotebookApp'
-      }
+  baseUrl: "/"
   image:
-    name: quay.io/jupyterhub/k8s-hub
-    tag: "4.2.0"
-  service:
-    type: ClusterIP
-  # Required by schema
-  baseUrl: /
+    name: jupyterhub/jupyterhub
+    tag: 4.2.0
+    pullPolicy: IfNotPresent
+    pullSecrets: []
+  cookieSecret: null
 
 proxy:
-  # Generate with: openssl rand -hex 32
-  secretToken: "f89ddee5ba10f2268fcefcd4e353235c1cdbab1f72ea183362f6ba1a22f6d700"
-  service:
-    type: ClusterIP
+  secretToken: null
   chp:
     image:
-      name: quay.io/jupyterhub/configurable-http-proxy
-      tag: "4.6.3"
+      name: jupyterhub/configurable-http-proxy
+      tag: latest
+    # No HTTPS, no TLS
+    service:
+      type: ClusterIP
+  service:
+    type: ClusterIP
 
 singleuser:
   image:
-    name: quay.io/jupyterhub/k8s-singleuser-sample
-    tag: "4.2.0"
-  cmd: ["jupyterhub-singleuser"]
+    name: jupyter/base-notebook
+    tag: latest
+    pullPolicy: IfNotPresent
+    pullSecrets: []
+  defaultUrl: "/lab"
   storage:
-    type: dynamic
-    capacity: 1Gi
-    dynamic:
-      storageClass: standard
-    # Required by schema
-    homeMountPath: /home/jovyan
-  memory:
-    guarantee: 512M
-    limit: 1G
+    type: none
 
-scheduling:
-  userScheduler:
-    enabled: false  # Simplify deployment for minimal setup
-    # Required by schema even when disabled
-    logLevel: 4
-    plugins:
-      score:
-        disabled: []
-        enabled: []
-    pluginConfig: []
-  userPlaceholder:
-    enabled: false
-  podPriority:
-    enabled: false
-    globalDefault: false
-    defaultPriority: 0
-    imagePullerPriority: -5
-    userPlaceholderPriority: -10
+ingress:
+  enabled: false
 
 prePuller:
   hook:
-    enabled: false  # Simplify deployment
+    enabled: false
   continuous:
     enabled: false
 
-# Required by schema
-ingress:
-  enabled: false
-  
-# Required by schema
 custom: {}
-
-# Required by schema
 cull:
-  enabled: true
-  timeout: 3600
-  every: 600
-
+  enabled: false
 debug:
   enabled: false
-
 rbac:
-  create: true
-  
-# Required by schema
+  create: false
 global:
-  safeToShowValues: false
+  safeToShowValues: true
