@@ -1,39 +1,32 @@
 imagePullSecrets: []
 
-# No imagePullSecret creation
-imagePullSecret:
-  create: false
-
 hub:
   baseUrl: "/"
   image:
     name: jupyterhub/jupyterhub
-    tag: 4.2.0
+    tag: "4.2.0"
     pullPolicy: IfNotPresent
-    pullSecrets: []
-  cookieSecret: null
 
 proxy:
   secretToken: null
   chp:
     image:
       name: jupyterhub/configurable-http-proxy
-      tag: latest
-    # No HTTPS, no TLS
-    service:
-      type: ClusterIP
-  service:
-    type: ClusterIP
+      tag: "latest"
 
 singleuser:
   image:
     name: jupyter/base-notebook
-    tag: latest
+    tag: "latest"
     pullPolicy: IfNotPresent
-    pullSecrets: []
   defaultUrl: "/lab"
   storage:
-    type: none
+    type: dynamic  # Use "static" for pre-provisioned PVCs
+    capacity: 10Gi
+    homeMountPath: /home/jovyan
+    dynamic:
+      storageClass: standard  # Replace with your actual StorageClass name
+    pvcNameTemplate: "claim-{username}"
 
 ingress:
   enabled: false
@@ -45,11 +38,15 @@ prePuller:
     enabled: false
 
 custom: {}
+
 cull:
   enabled: false
+
 debug:
   enabled: false
+
 rbac:
   create: false
+
 global:
   safeToShowValues: true
