@@ -11,14 +11,14 @@ proxy:
   chp:
     image:
       name: jupyterhub/configurable-http-proxy
-      tag: "latest"
+      tag: "5.0.1"
   service:
     type: ClusterIP  # or LoadBalancer, depending on your setup
 
 singleuser:
   image:
-    name: jupyter/base-notebook
-    tag: "latest"
+    name: quay.io/jupyterhub/k8s-singleuser-sample
+    tag: "set-by-chartpress"
     pullPolicy: IfNotPresent
   defaultUrl: "/lab"
   storage:
