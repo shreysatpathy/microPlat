@@ -140,24 +140,6 @@ hub:
       privateIPs: true
     interNamespaceAccessLabels: accept  # Allow access to labeled namespaces
     allowedIngressPorts: []
-  
-  # Add singleUser config with network policy to allow Ray access
-  singleuser:
-    networkPolicy:
-      enabled: true
-      egress:
-        # Allow specific Ray services
-        - ports:
-            - port: 8000
-              protocol: TCP
-            - port: 8265
-              protocol: TCP
-            - port: 8080
-              protocol: TCP
-          to:
-            - podSelector:
-                matchLabels:
-                  ray.io/node-type: head
   allowNamedServers: false
   namedServerLimitPerUser:
   authenticatePrometheus:
@@ -416,7 +398,19 @@ singleuser:
   networkPolicy:
     enabled: true
     ingress: []
-    egress: []
+    egress:
+      # Allow specific Ray services
+      - ports:
+          - port: 8000
+            protocol: TCP
+          - port: 8265
+            protocol: TCP
+          - port: 8080
+            protocol: TCP
+        to:
+          - podSelector:
+              matchLabels:
+                ray.io/node-type: head
     egressAllowRules:
       cloudMetadataServer: false
       dnsPortsCloudMetadataServer: true
@@ -424,7 +418,7 @@ singleuser:
       dnsPortsPrivateIPs: true
       nonPrivateIPs: true
       privateIPs: false
-    interNamespaceAccessLabels: ignore
+    interNamespaceAccessLabels: accept
     allowedIngressPorts: []
   events: true
   extraAnnotations: {}

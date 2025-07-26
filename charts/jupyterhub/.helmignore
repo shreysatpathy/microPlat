@@ -17,7 +17,7 @@ values.schema.yaml
 .gitignore
 .bzr/
 .bzrignore
-.hg/
+.hg/https://github.com/FoundationAgents/MetaGPT/blob/main/README.md%7Cwrite%20a%20metagpt%20agent%20that%20will%20use%20my%20openai%20%3Ckey%3E%20and%20use%20the%20best%20model.%20the%20idea%20is:%20%22app%20to%20simulate%20personal%20finances.%20I%20want%20to%20specify%20a%20financial%20change%20in%20my%20life%20and%20simulate%20what's%20a%20configurable%20time%20horizon%20would%20look%20like.%20it%20should%20obviously%20have%20context%20of%20my%20personal%20finances.%20it%20should%20also%20have%20rich%20preferrably%20dynamic%20visualizations.%22
 .hgignore
 .svn/
 # Common backup files
