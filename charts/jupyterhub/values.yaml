@@ -127,8 +127,7 @@ hub:
           # Allow Ray metrics port
           - port: 8080
             protocol: TCP
-          # Allow ICMP for ping
-          - protocol: ICMP
+          # Allow Ray Serve port
           - port: 8000
             protocol: TCP
 
