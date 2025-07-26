@@ -119,7 +119,7 @@ hub:
       - to:
           - namespaceSelector:
               matchLabels:
-                kubernetes.io/metadata.name: ray  # Adjust if your Ray namespace is different
+                kubernetes.io/metadata.name: ml-dev  # Adjust if your Ray namespace is different
         ports:
           # Allow Ray dashboard port
           - port: 8265
