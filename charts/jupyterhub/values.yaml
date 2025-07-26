@@ -114,7 +114,24 @@ hub:
   networkPolicy:
     enabled: true
     ingress: []
-    egress: []
+    egress:
+      # Allow all traffic to the Ray service namespace
+      - to:
+          - namespaceSelector:
+              matchLabels:
+                kubernetes.io/metadata.name: ray  # Adjust if your Ray namespace is different
+        ports:
+          # Allow Ray dashboard port
+          - port: 8265
+            protocol: TCP
+          # Allow Ray metrics port
+          - port: 8080
+            protocol: TCP
+          # Allow ICMP for ping
+          - protocol: ICMP
+          - port: 8000
+            protocol: TCP
+
     egressAllowRules:
       cloudMetadataServer: true
       dnsPortsCloudMetadataServer: true
@@ -122,7 +139,7 @@ hub:
       dnsPortsPrivateIPs: true
       nonPrivateIPs: true
       privateIPs: true
-    interNamespaceAccessLabels: ignore
+    interNamespaceAccessLabels: accept  # Allow access to labeled namespaces
     allowedIngressPorts: []
   allowNamedServers: false
   namedServerLimitPerUser:
