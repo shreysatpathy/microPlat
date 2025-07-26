@@ -24,7 +24,7 @@ RAY_NS=${RAY_NS:-ml-dev}
 # Port mappings
 GRAFANA_PORT=${GRAFANA_PORT:-3000}
 ARGOCD_PORT=${ARGOCD_PORT:-8080}
-JUPYTERHUB_PORT=${JUPYTERHUB_PORT:-8000}
+JUPYTERHUB_PORT=${JUPYTERHUB_PORT:-6767}
 RAY_DASHBOARD_PORT=${RAY_DASHBOARD_PORT:-8265}
 PROMETHEUS_PORT=${PROMETHEUS_PORT:-9090}
 ALERTMANAGER_PORT=${ALERTMANAGER_PORT:-9093}
@@ -188,10 +188,10 @@ start_all() {
     fi
     
     # Start JupyterHub (service name is 'hub')
-    if check_service "hub" "$JUPYTERHUB_NS"; then
-        start_port_forward "hub" "$JUPYTERHUB_NS" "$JUPYTERHUB_PORT" "8081" "JupyterHub"
+    if check_service "proxy-public" "$JUPYTERHUB_NS"; then
+        start_port_forward "proxy-public" "$JUPYTERHUB_NS" "$JUPYTERHUB_PORT" "80" "JupyterHub"
     else
-        print_warning "JupyterHub service 'hub' not found in namespace $JUPYTERHUB_NS"
+        print_warning "JupyterHub service 'proxy-public' not found in namespace $JUPYTERHUB_NS"
     fi
     
     # Start Ray Dashboard
@@ -240,7 +240,7 @@ start_all() {
                             start_port_forward "argocd-server" "$ARGOCD_NS" "$ARGOCD_PORT" "80" "ArgoCD"
                             ;;
                         "JupyterHub")
-                            start_port_forward "hub" "$JUPYTERHUB_NS" "$JUPYTERHUB_PORT" "8081" "JupyterHub"
+                            start_port_forward "proxy-public" "$JUPYTERHUB_NS" "$JUPYTERHUB_PORT" "80" "JupyterHub"
                             ;;
                         "Ray Dashboard")
                             start_port_forward "ray-sample-cluster-head-svc" "$RAY_NS" "$RAY_DASHBOARD_PORT" "8265" "Ray Dashboard"
@@ -281,7 +281,7 @@ show_usage() {
     echo "  RAY_NS            - Ray namespace (default: ml-dev)"
     echo "  GRAFANA_PORT      - Grafana local port (default: 3000)"
     echo "  ARGOCD_PORT       - ArgoCD local port (default: 8080)"
-    echo "  JUPYTERHUB_PORT   - JupyterHub local port (default: 8000)"
+    echo "  JUPYTERHUB_PORT   - JupyterHub local port (default: 6767)"
     echo "  RAY_DASHBOARD_PORT - Ray Dashboard local port (default: 8265)"
     echo "  DEBUG             - Enable debug output (default: false)"
     echo ""
