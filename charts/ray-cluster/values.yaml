@@ -10,6 +10,8 @@ spec:
     rayStartParams: 
       dashboard-host: 0.0.0.0
       metrics-export-port: "8080"
+      serve-host: 0.0.0.0
+      serve-port: "8000"
     template:
       metadata:
         annotations:
