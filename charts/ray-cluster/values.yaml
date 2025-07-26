@@ -51,7 +51,7 @@ spec:
                 memory: 512Mi
   workerGroupSpecs:
     - groupName: worker-group
-      replicas: 2
+      replicas: 1
       rayStartParams:
         metrics-export-port: "8080"
       template:
@@ -86,7 +86,7 @@ spec:
               resources:
                 limits:
                   cpu: 2
-                  memory: 2Gi
+                  memory: 4Gi
                 requests:
                   cpu: 500m
                   memory: 512Mi
